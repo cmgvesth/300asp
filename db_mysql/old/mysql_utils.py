@@ -9,7 +9,7 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-#from mysql_classes import Fasta	# custom class
+from mysql_classes import Fasta	# custom class
 import pprint
 import numpy
 ##############################################################################################################################################
@@ -19,69 +19,27 @@ import numpy
 ##############################################################################################################################################
 
 #######################################################################
-# Function tester
-#######################################################################
-def test():
-	(org_name, dbname) = ("Aspni1", "aspminedb")
-	org_id = get_org_id(org_name, dbname, 1)
-
-	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
-		sys.exit("# ERROR: get_org_id does not return an integer number")
-
-#######################################################################
-# Format argument helper
-#######################################################################
-class SmartFormatter(argparse.HelpFormatter):
-	width = 100
-	def _split_lines(self, text, width):
-		if text.startswith('R|'):
-			return text[2:].splitlines()  
-		return argparse.HelpFormatter._split_lines(self, text, width)
-
-#######################################################################
-# Format argument parser, allows help display when no arguments are given
-#######################################################################
-class CustomArgumentParser(argparse.ArgumentParser):
-    def error(self, message):
-		print "#--------------------------------------------------------------"
-		print "# HELP:"
-		print "#--------------------------------------------------------------"
-		self.print_help()
-		print "#--------------------------------------------------------------"
-		print "# ERROR: %s" % message
-		print "#--------------------------------------------------------------"
-		sys.exit()
-
-#######################################################################
 # Fetch or create organism _id, auto increment 
 #######################################################################
-def get_org_id(org_name, dbname, test):
-	# test of connection has to be performed prior ------------------------------------
-	db = mdb.connect("localhost","asp","1234",dbname) 
+def get_org_id(org_name, dbname):
+	db = mdb.connect("localhost","asp","1234",dbname) # test of connection has to be performed prior ------------------------------------
 	cursor = db.cursor()
 
-	cursor.execute("SELECT org_id from organism where name LIKE \'" + org_name + "%\';")
-	# first element of tuple ------------------------------------
-	org_id = cursor.fetchone() 
+	cursor.execute("SELECT org_id from organism where name LIKE \"%" + org_name + "%\";")
+	org_id = cursor.fetchone() # first element of tuple ------------------------------------
 
 	if not org_id:
 		try:
-			cursor.execute("REPLACE INTO organism(name) VALUES(\'" + org_name + "\');")
+			cursor.execute("REPLACE INTO organism(name) VALUES(\"" + org_name + "\");")
 			db.commit()
 			org_id = cursor.lastrowid
+			db.close()
 			
 		except mdb.Error, e:
 			sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
-
-		# If function is being tested, delete the entry again
-		if test == 1: 
-			cursor.execute("DELETE FROM organism WHERE name = (\'" + org_name + "\');")
-			db.commit()
-		db.close()
+		
 		return org_id
-
 	else:
-		db.close()
 		return org_id[0]
 
 #######################################################################
@@ -116,9 +74,7 @@ def check_file_format (wanted_nr_columns, records):
 		sys.exit("# ERROR utils: no records found in file")
 		
 	for r in records:	
-
-		# Exclude comment and empty lines ------------------------------------
-		#if r.startswith("#") or r == '' or r == "protein_id": continue	
+		if r.startswith("#") or r == "" or r == "protein_id": continue	# Exclude comment and empty lines ------------------------------------
 
 		nr_columns = len(r.split("\t"))
 		if not nr_columns == wanted_nr_columns :
@@ -127,7 +83,7 @@ def check_file_format (wanted_nr_columns, records):
 #######################################################################
 # Decompress files
 #######################################################################
-def gzip_tab_file (filepath):
+def gzip_file (filepath):
 	records = []
 	try:
 		decompressed_file = gzip.open(filepath, "rb")
@@ -137,8 +93,7 @@ def gzip_tab_file (filepath):
 		sys.exit("# ERROR utils gzip: not GZIP file" )
 
 	for i in tmp_records:
-		# Exclude comment and empty lines ------------------------------------
-		if i.startswith("#") or i == '' or i.startswith("protein"): continue	
+		if i.startswith("#") or i == "" or i.startswith("protein"): continue	# Exclude comment and empty lines ------------------------------------
 		else: records.append(i) 
 
 	return records
@@ -164,42 +119,44 @@ def gzip_fasta_file (filepath):
 # Handle FASTA data
 #######################################################################
 def fasta (org_name, filepath, action, filetype, dbname, prefix):
-	(totalcounter, counter) = (0,0)
+	counter = 0
+	totalcounter = 0
 	org_id = ''
-	filename = filepath.split("/")[-1]
 	
-	# function to unzip file and store in list ------------------------------------
-	records = gzip_fasta_file(filepath) 
+	records = gzip_fasta_file(filepath) # function to unzip file and store in list ------------------------------------
 		
 	# If this is empty, there was nothing that matched a FASTA format in the file ------------------------------------
 	if len(list(records)) < 1:	
 		sys.exit("# ERROR: Not FASTA format or empty FASTA entry")
 
 	# Find the file name and add prefix if specified  ------------------------------------
+	filename = filepath.split("/")[-1]
 	if prefix: filename = prefix+filename
 
-	valueSortLine = ("orgkey","seqkey","tailkey","seqname", "seq", "org_id", "orgseq")
+	valueSortLine = ("jgi1","jgi2","jgi3","seq_name", "seq", "tp_id", "org_id")
 
 	# Protein FASTA ------------------------------------
 	if filetype == "pf":
 		name = "protein-FASTA"
-		insertQuery = "REPLACE INTO proteins(prot_orgkey, prot_seqkey, prot_tailkey, prot_seqname, prot_seq, org_id, prot_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
+		valueSortLine = ("jgi1","jgi2","jgi3","seq_name", "seq", "tp_id", "org_id", "seq_key")
+		insertQuery = "REPLACE INTO proteins(prot_jgi1, prot_jgi2, prot_jgi3, prot_seq_name, prot_seq, prot_protein_id, org_id, prot_seq_key) values(%s,%s,%s,%s,%s,%s,%s,%s);"
 		
 	# DNA FASTA ------------------------------------
 	elif filetype == "tf":
 		name = "transcript-FASTA"
-		insertQuery = "REPLACE INTO transcripts(trans_orgkey, trans_seqkey, trans_tailkey, trans_seqname, trans_seq, org_id, trans_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
+		insertQuery = "REPLACE INTO transcripts(trans_jgi1, trans_jgi2, trans_jgi3, trans_seq_name, trans_seq, trans_transcript_id, org_id) values(%s,%s,%s,%s,%s,%s,%s);"
 
 	elif filetype == "cf":
 		name = "cds-FASTA"
-		insertQuery = "REPLACE INTO cds(cds_orgkey, cds_seqkey, cds_tailkey, cds_seqname, cds_seq, org_id, cds_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
+		insertQuery = "REPLACE INTO cds(cds_jgi1, cds_jgi2, cds_jgi3, cds_seq_name, cds_seq, cds_transcript_id, org_id) values(%s,%s,%s,%s,%s,%s,%s);"
 
 	elif filetype == "uma" or filetype == "ma":
 		name = "assembly-FASTA"
-		insertQuery = "REPLACE INTO assembly(assembly_orgkey, assembly_seqkey, assembly_tailkey, assembly_seqname, assembly_seq, org_id, assembly_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
+		valueSortLine = ("jgi1","jgi2","jgi3","seq_name", "seq", "org_id")
+		insertQuery = "REPLACE INTO assembly(assembly_jgi1, assembly_jgi2, assembly_jgi3, assembly_seq_name, assembly_seq, org_id) values(%s,%s,%s,%s,%s,%s);"
 		
 	else:
-		sys.exit("# ERROR: filetype not recognized %s" % filename)
+		sys.exit("# ERROR: filetype not recognized %s" % filepath.split("/")[-1])
 	
 	return load_fasta_files(name, valueSortLine, insertQuery, org_name, filepath, action, dbname)	
 
@@ -208,33 +165,30 @@ def fasta (org_name, filepath, action, filetype, dbname, prefix):
 # Load FASTA type files
 #######################################################################
 def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action, dbname):
-	(totalcounter, counter) = (0,0)
-	values_to_insert = []
-	valuehash = {}
+	if action == "load":
+		print "# LOADING %s file: %s" % (name, filepath.split("/")[-1])
+	else:
+		print "# TESTING %s file: %s" % (name, filepath.split("/")[-1])
 
-	# Only get the org_id once and not for all records ------------------------------------
-	org_id = get_org_id(org_name, dbname, 0) 
-	filename = filepath.split("/")[-1]
-
-	if action == "load":	print "# LOADING %s file: %s" % (name, filename)
-	else:					print "# TESTING %s file: %s" % (name, filename)
-
-	# function to unzip file and store in list ------------------------------------
-	records = gzip_fasta_file(filepath) 
-	
-	# If this is empty, there was nothing that matched a FASTA format in the file	 ------------------------------------
-	if len(list(records)) < 1:	
+	records = gzip_fasta_file(filepath) # function to unzip file and store in list ------------------------------------
+	if len(list(records)) < 1:	# If this is empty, there was nothing that matched a FASTA format in the file	 ------------------------------------
 		sys.exit("# ERROR: Not FASTA format or empty FASTA entry")
 
+	values_to_insert = []
+	counter = 0
+	totalcounter = 0
+	valuehash = {}
+	org_id = get_org_id(org_name, dbname) # Only get the org_id once and not for all records ------------------------------------
+	
 	for r in records:
 		counter += 1
 		totalcounter += 1
 		values = ()
 
 		# Store variable names in dict and get values from record ------------------------------------
+
 		if name == "protein-FASTA":
-			# Make "sure" sequence is Protein ------------------------------------ 
-			non_ExtendedIUPACProtein = set(str(r.seq.lower())) - set("ACDEFGHIKLMNPQRSTVWYBXZJUO".lower()) 
+			non_ExtendedIUPACProtein = set(str(r.seq.lower())) - set("ACDEFGHIKLMNPQRSTVWYBXZJUO".lower()) # Make "sure" sequence is Protein ------------------------------------ 
 			# ExtendedIUPACProtein: ACDEFGHIKLMNPQRSTVWYBXZJUO http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.ExtendedIUPACProtein-class.html
 			
 			if len(non_ExtendedIUPACProtein) != 0:
@@ -244,8 +198,7 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 					sys.exit("# ERROR : Found amino ac_ids other than ACDEFGHIKLMNPQRSTVWYBXZJUO = %s" % ",".join(non_ExtendedIUPACProtein))
 
 		if name == "assembly-FASTA" or name == "transcirpt-FASTA" or name == "cds-FASTA": 
-			# Make "sure" sequence is DNA ------------------------------------ 
-			non_IUPACUnambiguousDNA = set(str(r.seq.lower())) - set("atcg") 
+			non_IUPACUnambiguousDNA = set(str(r.seq.lower())) - set("atcg") # Make "sure" sequence is DNA ------------------------------------ 
 			# ExtendedIUPACDNA : GATCBDSW http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.ExtendedIUPACDNA-class.html
 			# IUPACAmbiguousDNA : GATCRYWSMKHBVDN http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.IUPACAmbiguousDNA-class.html
 			# IUPACUnambiguousDNA : GATC http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.IUPACUnambiguousDNA-class.html
@@ -256,33 +209,35 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 				else:
 					sys.exit("# ERROR : Found bases other than A, T, G, C or N: " + ",".join(non_IUPACUnambiguousDNA))
 
-		valuehash["seqname"]	= (r.description,)
-		valuehash["seq"]		= (str(r.seq.lower()),)
-
+		valuehash["seq_name"]	= (r.description,)
+		#valuehash["id_line"]	= (r.description.split(" ")[0],)
 		if len(r.description.split(" ")[0].split("|"))>3:
-			valuehash["orgkey"]		= (r.description.split(" ")[0].split("|")[1],)
-			valuehash["seqkey"]		= (r.description.split(" ")[0].split("|")[2],)
-			valuehash["tailkey"]	= (r.description.split(" ")[0].split("|")[3],)
-			# EXAMPLE: jgi|Aspac1|10177|gw1.1.1170.1
-			valuehash["orgseq"] 	= 	(valuehash["orgkey"]+"_"+valuehash["seqkey"],)	 
+			valuehash["jgi1"]		= (r.description.split(" ")[0].split("|")[1],)
+			valuehash["jgi2"]		= (r.description.split(" ")[0].split("|")[2],)
+			valuehash["jgi3"]		= (r.description.split(" ")[0].split("|")[3],)
 		else:
-			valuehash["orgkey"]		= (org_name,)
-			valuehash["seqkey"]		= (r.description.split(" ")[0],)
-			valuehash["tailkey"]	= ('',)
-			valuehash["orgseq"]		= (valuehash["orgkey"]+"_"+valuehash["seqkey"],)
-				
-		# create list of values to be inserted ------------------------------------
-		for val in valueSortLine:	
-			# NOT FOUND IN FILE BUT OBTAINED FROM DB ------------------------------------
-			if val == "org_id":	values += (org_id,)	
+			valuehash["jgi1"]		= (r.description.split(" ")[0],)
+			valuehash["jgi2"]		= ("",)
+			valuehash["jgi3"]		= ("",)
+		
+		valuehash["seq"]		= (str(r.seq.lower()),)
+		valuehash["name"]		= ("_".join(r.description.split("_")[:-1]),)
+		valuehash["tp_id"]		= ('',)
+		valuehash["seq_key"]	= ('',)
+		
+		if len(r.description.split("|")) > 1:
+			valuehash["tp_id"]	=	(r.description.split("|")[2],)
+			valuehash["seq_key"] = 	(r.description.split("|")[1]+"_"+r.description.split("|")[2],)	 # jgi|Aspac1|10177|gw1.1.1170.1
+
+		for val in valueSortLine:	# create list of values to be inserted ------------------------------------
+			if val == "org_id":	values += (org_id,)
 			else: 				values += valuehash[val]
 			
-		# Create sets of lists of values ------------------------------------
-		values_to_insert.append(values) 
-		
-		# MySQL will only allow a certain data insert size so for assemblies  ------------------------------------
-		if name == "assembly-FASTA" : counter_threshold = 2 
+		values_to_insert.append(values) # Create sets of lists of values ------------------------------------
+
 		counter_threshold = 1000
+		# MySQL will only allow a certain data insert size so for assemblies 
+		if name == "assembly-FASTA" : counter_threshold = 2 
 		
 		if action == "load" and ( counter == counter_threshold or totalcounter == len(records)):
 			if totalcounter % 3000 == 0  or totalcounter == len(records) : print "# INFO: Inserting record number %s" % totalcounter
@@ -300,7 +255,7 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 			except mdb.Error, e:
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
 
-	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
+	print "# FINISHED %s file: %s with total number of records %s" % (name,filepath.split("/")[-1], totalcounter)
 	return org_id	
 
 ##############################################################################################################################################
@@ -309,109 +264,63 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 ##############################################################################################################################################
 ##############################################################################################################################################
 
-#######################################################################
-# Parse lines
-#######################################################################
-def parse_go_line(line):
-	segments = line.replace("\t", " ").split(" ")
-	
-	line_id = int(segments[0])	# Pull the ID value from the first segment
-  
-	# Init result sets  ------------------------------------
-	id_list = []
-	term_list = []
-	type_list = []
-	acc_list = []
-  
-	# Init indexes
-	i = 1
-	j = len(segments) - 1
-
-	# Read IDs
-	# Note: i put i<j here to force this to terminate at some point   ------------------------------------
-	while(i<j): 
-		if(segments[i] != "|"):
-			id_list.append(int(segments[i]))
-			if(segments[i+1] != "|"):
-				break
-		i += 1
-	# Move 'i' forward because of break  ------------------------------------
-	i += 1	
-
-	# Read GO accession numbers  ------------------------------------
-	while(i<j):
-		if(segments[j] != "|"):
-			acc_list.append(segments[j])
-			if(segments[j-1] != "|"):
-				break
-		j-= 1
-	# Move 'j' backward because of break  ------------------------------------
-	j -= 1	
-
-	while(i<j):	# Read GO types
-		if(segments[j] != "|"):
-			type_list.append(segments[j])
-			if(segments[j-1] != "|"):
-				break
-		# No need to move j at this point  ------------------------------------
-		j -= 1	
-	
-
-	# Read go terms  ------------------------------------
-	remaining = " ".join(segments[i:j])
-	term_list = remaining.split(" | ")
-
-	# Check Results  ------------------------------------
-	l1 = len(id_list)
-	if(l1 == 0):
-		sys.exit("# ERROR: GO parser ran into an error parsing the line (is the line is empty?)")
-	if(l1 != len(term_list) or l1 != len(type_list) or l1 != len(acc_list)):
-		sys.exit("# ERROR: GO parser ran into an error parsing the line, there must be the same number of go_ids, go_terms, go_types, and go_accs in the line")
-
-	# Build and return result set
-	return [(line_id, go_id, go_term, go_type, go_acc) for (go_id, go_term, go_type, go_acc) in zip(id_list, term_list, reversed(type_list), reversed(acc_list))]
 
 #######################################################################
 # Load tab type files
 #######################################################################
-def load_tab_files(name, nrtab, valueLine, insertQuery, org_name,filepath, action, dbname):
+def load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname):
+	if action == "load":
+		print "# LOADING %s file: %s" % (name, filepath.split("/")[-1])
+	else:
+		print "# TESTING %s file: %s" % (name, filepath.split("/")[-1])
 
+	records = gzip_file(filepath) # function to unzip file and store in list ------------------------------------
+	check_file_format (nrtab, records) # function to verify that the tab file has the right number of fields ------------------------------------
+	
+	values_to_insert = []
 	counter = 0
 	totalcounter = 0
-	values_to_insert = []
 	valuehash = {}
-	filename = filepath.split("/")[-1]
+	org_id = get_org_id(org_name, dbname) # Only get the org_id once and not for all records ------------------------------------
+
 	
-	if action == "load":	print "# LOADING %s file: %s" % (name, filename)
-	else:					print "# TESTING %s file: %s" % (name, filename)
-
-	# function to unzip file and store in list ------------------------------------
-	records = gzip_tab_file(filepath) 
-
-	# function to verify that the tab file has the right number of fields ------------------------------------
-	check_file_format (nrtab, records) 
-	
-	# Only get the org_id once and not for all records ------------------------------------
-	org_id = get_org_id(org_name, dbname, 0) 
-
 	for r in records:
 		counter += 1
 		totalcounter += 1
-		nr_values = len(valueLine)
+		values = ()
+	
+		for var in range(0,len(valueLine)):	# Store variable names in dict and get values from record ------------------------------------
+			valuehash[valueLine[var]] = (r.split("\t")[var],)
+			#print valuehash
+			
+		#print valuehash["gff_attributes"][0]
+		for val in valueSortLine:	# create list of values to be inserted ------------------------------------
+			if name == "GFF":
+				string = str(valuehash["gff_attributes"][0])
+			if val == "org_id":
+				values += (org_id,)
 
-		if name == "go":
-			nested_results = parse_go_line(r)
-			unnested_results = [item for sublist in nested_results for item in sublist]
-			# TO DO: create valuehash from these Results
-			#print unnested_results
+			elif val == "gff_name":
+				values += (valuehash["gff_attributes"][0].split("\"")[1],)
 
-		else:
-			# Store variable names in dict and get values from record ------------------------------------
-			for var in range(0,len(valueLine)):	
-				valuehash[valueLine[var]] = (r.split("\t")[var],)
+			elif val == "gff_protein_id":
+				if (re.search(r"proteinId (\d+)", string)):
+					values += (re.search(r"proteinId (\d+)", string).group(1),)
+				else:
+					values += ('',)
+			elif val == "gff_transcript_id":
+				if (re.search(r"transcriptId (\d+)", string)):
+					values += (re.search(r"transcriptId (\d+)", string).group(1),)
+				else:
+					values += ('',)
+			else:	
+				values += valuehash[val]
+
+		print values_to_insert
+		values_to_insert.append(values) # Create sets of lists of values ------------------------------------
 		
 		if action == "load" and ( counter == 1000 or totalcounter == len(records)):
-			# Print insert information  ------------------------------------
+			# Print insert information 
 			if totalcounter % 10000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
 			elif totalcounter % 2000 == 0: print "# INFO: Inserting record number %s" % totalcounter
 			elif totalcounter == len(records): print "# INFO: Inserting record number %s" % totalcounter
@@ -421,23 +330,17 @@ def load_tab_files(name, nrtab, valueLine, insertQuery, org_name,filepath, actio
 				cursor = db.cursor()
 				cursor.executemany(insertQuery,values_to_insert)
 
-				# add the changes to the db  ------------------------------------
-				db.commit() 
-
-				# dont leave the db connection open  ------------------------------------
-				db.close()	
+				db.commit()
+				db.close()
 				
-				# reset counter and values to insert ------------------------------------
 				counter = 0 
 				values_to_insert = []
 
 			except mdb.Error, e:
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
 
-	if action == "test" and ( counter == 1000 or totalcounter == len(records)):
-		print "# INFO: query %s value %s" % ( insertQuery, values_to_insert )
-						
-	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
+	print "# FINISHED %s file: %s with total number of records %s" % (name,filepath.split("/")[-1], totalcounter)
+	#print "Org_id:", org_id
 	return org_id	
 	
 #######################################################################
@@ -446,19 +349,11 @@ def load_tab_files(name, nrtab, valueLine, insertQuery, org_name,filepath, actio
 def go (org_name,filepath, action, dbname):	
 	name = "GO"
 	nrtab = 5
-	relevanttabs = range(1,5,1)
-	valueLine1 = ["goterm_id", "goName", "gotermType", "goAcc"]
-	#valueSortLine1 = ("goterm_id", "goName", "gotermType", "goAcc", "org_id")
-	insertQuery1 = "REPLACE INTO go (go_term_id, go_name, go_termtype, go_acc, org_id) values(%s,%s,%s,%s,%s);"
+	valueLine = ["protein_id", "goterm_id", "goName", "gotermType", "goAcc"]
+	valueSortLine = ("protein_id", "goterm_id", "goName", "gotermType", "goAcc", "org_id", "protein_id", "org_id")
+	insertQuery = "REPLACE INTO go (go_protein_id, go_term_id, go_name, go_termtype, go_acc, org_id, go_prot_seq_name) values(%s,%s,%s,%s,%s,%s,(SELECT prot_seq_name from proteins WHERE prot_protein_id =%s and org_id = %s));"
+	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
 
-	valueLine2 = ["protein_id", "goterm_id"]
-	#valueSortLine2 = ("protein_id", "goterm_id", "org_id")
-	insertQuery2 = "REPLACE INTO protein_has_go (go_protein_id, go_term_id, org_id) values(%s,%s,%s);"
-
-	load1 = load_tab_files(name, nrtab, valueLine1, insertQuery1, org_name,filepath, action, dbname)
-	load2 = load_tab_files(name, nrtab, valueLine2, insertQuery2, org_name,filepath, action, dbname)
-
-	return load1, load2
 
 #######################################################################
 # SignalP
