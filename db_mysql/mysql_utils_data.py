@@ -24,33 +24,9 @@ import numpy
 def test():
 	(org_name, dbname) = ("Aspni1", "aspminedb")
 	org_id = get_org_id(org_name, dbname, 1)
-
+	print type(org_id)
 	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
 		sys.exit("# ERROR: get_org_id does not return an integer number")
-
-#######################################################################
-# Format argument helper
-#######################################################################
-class SmartFormatter(argparse.HelpFormatter):
-	width = 100
-	def _split_lines(self, text, width):
-		if text.startswith('R|'):
-			return text[2:].splitlines()  
-		return argparse.HelpFormatter._split_lines(self, text, width)
-
-#######################################################################
-# Format argument parser, allows help display when no arguments are given
-#######################################################################
-class CustomArgumentParser(argparse.ArgumentParser):
-    def error(self, message):
-		print "#--------------------------------------------------------------"
-		print "# HELP:"
-		print "#--------------------------------------------------------------"
-		self.print_help()
-		print "#--------------------------------------------------------------"
-		print "# ERROR: %s" % message
-		print "#--------------------------------------------------------------"
-		sys.exit()
 
 #######################################################################
 # Fetch or create organism _id, auto increment 

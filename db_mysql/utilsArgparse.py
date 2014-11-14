@@ -13,6 +13,12 @@ parser = CustomArgumentParser(
 	description="Load data into local mysql database", 
 	usage='%(prog)s -filetype filetype -action action -source filename\n')
 
+To make use of the SmartFormatter add a "R|" to the beginning of the help text for each argument:
+parser.add_argument('-action' , "-a", required=True, default = "test", choices=['load', 'test'],
+					help='R|Test or test and load data\n'
+					"-test\t: Read files and verify formats\n"
+					"-load\t: Read files and verify formats followed by storing data in MySQL tables\n")
+
 """
 #######################################################################
 
