@@ -1,0 +1,93 @@
+This is the whitepaper manual for the 300asp project.
+The document includes information on how to write code for the project.
+
+Instructions include rules on:
+- commandline arguments
+- commenting style and frequenzy
+- error handling
+- function testing
+- variable naming 
+
+#--------------------------------------
+Share Early, Share Often!
+#--------------------------------------
+The 300asp project is both a biological and coding project but the main forcus is on the biological nowledge. 
+For this reason, coding should not be in the way and all initiatives must be towards making coding easier and more efficient.
+A great way to ensure this is to get help on the project you are working on.
+Getting help on your code is mush easier when common structures are standerdized. 
+Allowing people to look at your code early on also makes it easierf or people to help and understand your line of thought. 
+This will allow you to catch oversights and common mistakes earl in the process and save you time in the long run. 
+
+"But, my code's not ready!"
+Oh, please. Think of it like this: software development is like a conversation. The conversation has to start somehow. Here's what you can do right now: create a new project, explaining your idea, commit your new code and push it to GitHub. Now, the conversation has already started, and people have a way to discuss your idea in a meaningful way based on your description and code. Before you know it, you'll be improving your code and idea, all because you put it out there and made it available for review early. Sounds like fun, doesn't it? That's because it is fun. Come, join the conversation!
+
+Happy coding, and please ask for help if you find you need it! We are a community of developers, and we love to help.
+
+
+####################################
+Error handling
+####################################
+Handling errors in code can mean many things and the importance of different error handles depend on the individual project. 
+Having said that, some error handlings are always useful.
+Verifying the format of inputs is crusual to a proper data manipulation code. 
+These verifications is mostly about checking the assumptions you already have about the data.
+You expect the input to be a file, python has modules for this so that is easy anough. 
+You expect the file to be a FASTA, TAB or other format - these sort of check are a little more tricky and we will make reusable functions for this. 
+
+
+####################################
+Commandline arguments 
+####################################
+
+All scripts must take input as commandlline arguments. 
+It is not allowed to use input redicreted from the commandline.
+
+#--------------------------------------
+Approved format:
+$ program.py -a input.file -o value -b cutoff
+
+Diapproved format:
+$ program.py < input.file
+#--------------------------------------
+
+####################################
+Commenting style and frequenzy
+####################################
+
+All scripts must have in-line comments.
+All scripts must have an initial comment section describing the use of the progra, input and output format examples. 
+Comments may not be written at the end of code lines.
+In line comments should be followed by a tail of dash characters for increased visability.
+Primary sections of the code should be marked with character lines (-).
+Functions should be marked with character lines (#).
+For sections of codes or loops, multi line comments should be put at the beginning of the code to explain the general function of the code. 
+Add comments for TO DO items. 
+
+#--------------------------------------
+Approved format:
+#!/usr/bin/python
+
+#------------------------------------------------------------------
+# Imports -> this is a primary sections commennt
+#------------------------------------------------------------------
+
+#######################################################################
+# Fetch or create organism _id, auto increment - this block marks the beginning of a function -> this is a function comment
+#######################################################################
+
+# Unzip file and store in list ------------------------------------ -> this is an inline comment
+records = gzip_fasta_file(filepath) 
+
+# Read GO accession numbers  ------------------------------------ -> this is a code block comment
+# Move 'j' backward because of break
+while(i<j):
+	if(segments[j] != "|"):
+		acc_list.append(segments[j])
+		if(segments[j-1] != "|"):
+			break
+	j-= 1
+j -= 1	
+
+# TO DO : add check for number of fields in TAB line
+#--------------------------------------
+
