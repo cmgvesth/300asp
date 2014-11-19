@@ -1,7 +1,18 @@
+#!/usr/bin/python
 
+#------------------------------------------------------------------
+# Imports
+#------------------------------------------------------------------
+import sys, getopt, argparse, re, glob, os
+import gzip
+
+#######################################################################
+# Test if a sequence is amino acids
+# This function takes a sequences and tests if the alphabet matches a amino acid string
+# Function does not return any values but prints warning to the screen 
+# Function will terminat program if error condition is met. 
+#######################################################################	
 def check_seq_protein(seq):
-	# This function takes a sequences and tests if the alphabet matches a amino acid string
-	# Function does not return any values but prints warning to the screen 
 	symbol_flag = 0
 
 	if len(set(str(seq.lower())) - set("actg")) == 0	:
@@ -18,11 +29,13 @@ def check_seq_protein(seq):
 			else:
 				sys.exit("# ERROR : Found amino acids other than ACDEFGHIKLMNPQRSTVWYBXZJUO = %s" % ",".join(non_ExtendedIUPACProtein))
 
-
-
+#######################################################################
+# Test if a sequence is DNA
+# This function takes a sequences and tests if the alphabet matches a DNA string
+# Function does not return any values but pritns warning to the screen 
+# Function will terminat program if error condition is met. 
+#######################################################################	
 def check_seq_dna(seq):
-	# This function takes a sequences and tests if the alphabet matches a DNA string
-	# Function does not return any values but pritns warning to the screen 
 
 	# Make "sure" sequence is DNA ------------------------------------ 
 	non_IUPACUnambiguousDNA = set(str(seq.lower())) - set("atcg") 
@@ -35,3 +48,21 @@ def check_seq_dna(seq):
 			print "# WARNING: Found ambiguouse base: N"
 		else:
 			sys.exit("# ERROR : Found bases other than A, T, G, C or N: " + ",".join(non_IUPACUnambiguousDNA))
+
+#######################################################################
+# Handle TAB file format check
+# This function takes a number for how many tab fields there should be in the lines (wanted_nr_columns).
+# The other input is a list of file lines
+#######################################################################	
+
+def check_tab_format (wanted_nr_columns, records):
+	if len(records) < 1:
+		sys.exit("# ERROR utils: no records found in file")
+		
+	for r in records:	
+
+		nr_columns = len(r.split("\t"))
+		if not nr_columns == wanted_nr_columns :
+			sys.exit("# ERROR utils : wrong number of columns, not correct file format, %s" % r)
+
+

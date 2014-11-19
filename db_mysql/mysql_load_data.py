@@ -229,6 +229,7 @@ if filetype == "dir":
 			elif re.search(r"Assembly", filename) or re.search(r"_masked_scaffold", filename):
 				if not re.search(r"unmasked", str(path)):
 					org_id = fasta(org_name,path, action, "ma", dbname, args.prefix)
+
 	filelist.close()
 	
 	print "#--------------------------------------------------------------"
@@ -252,6 +253,7 @@ if filetype == "dir":
 
 			elif re.search(r"_GO", filename):
 				org_id = go(org_name,path, action, dbname)
+
 			elif re.search(r"_KEGG", filename):
 				org_id = kegg(org_name,path, action, dbname)
 
@@ -289,7 +291,7 @@ else:
 	elif filetype == "ipr":
 		org_id = ipr(org_name,source, action, dbname)
 	else:
-		sys.exit("ERROR: filetype has no defined action")
+		sys.exit("# ERROR: filetype has no defined action")
 
 #------------------------------------------------------------------
 # At this point the org_id should have been defined by one or more functions
