@@ -4,17 +4,76 @@
 # Imports
 #------------------------------------------------------------------
 import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os
-import gzip
+import sys, getopt, argparse, re, glob, os, gzip
+
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from mysql_utils_data import * # custom functions
 from utilsArgparse import * # custom functions
-import pprint
 from datetime import datetime
 
+
+##############################################################################################################################################
+##############################################################################################################################################
+####################################################################### TEST ############################################################
+##############################################################################################################################################
+##############################################################################################################################################
+def test():
+	(org_name, dbname, prot_id) = ("Aspni1", "aspminedb", "19949")
+
+	# Test get_org_id
+	org_id = get_org_id(org_name, dbname, 1)
+	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
+		sys.exit("# ERROR: get_org_id does not return an integer number")
+
+	# Create temporary dna FASTA file
+	fasta_dna_entry = ">scaffold_1\nTTTTTAATTTTCGAACTAACTAAAAAAACTTTTATTTAATCTGATAAAAA\nAAACCAACtattattatattaaattctaattatatattttatttagttta\nttaattttttaataatattaCAGAGAAGAGCAGTAATTACTGTAGACtta\n>scaffold_7\ntaatgtaaaccctaatgtaaaccctaatgtaaaccctaatgtaaacccta\natgtaaaccctaatgtaaccctaacccccctaatctgacaaccctaaTGT\nAATACCTTCGGCGGAAGGTTTATCCGGTGCTGACGGGCCGAGGTTTCTCC"
+	#fasta_dna_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
+	tmp_dna_filename = 'tmp_' + org_name + '_dna.fsa.gz'
+	tmp_dna_file = gzip.open(tmp_dna_filename, 'wb') 
+	tmp_dna_file.write(fasta_dna_entry)
+	tmp_dna_file.close()
+
+	# Create temporary gene dna FASTA file
+	fasta_gene_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nATGTCCCCTGCCTTTCGCATTCAAGCTATCTCGATACCCAATAATTACTTGCCTCCACGCAAGTCGTTCA\nATCTCTCATATTGGGACGTCATGGCTCAGGAGTGGCTCGTCGCTCCCGGCTCATATAATGTCTTCATTGG\nCGCGAGCTCACGCGACCTAAGACTGAATGGAACGTTTTCTTTGACTGTTACAGCCTAA\n>jgi|Aspac1|37826|Genemark1.2_g\nATGGATTGCGACGAGACAAAGCCCGAGTGCTCGAACTGCGTCAACCATTCTGTGCGCTGTATCTACGATT\nTGCGTGGATGTTTTTGGAGGAGGAGGAGCGGGGGTTGGTGAGATGGTTGATTGACGATGTCGGGGTGTTG\nGGGTTGTCTGGTTGA\n>jgi|Aspac1|37827|Genemark1.3_g\nATGGTCCGGGGTATTATCTTCCAGCTCGTATTCGTGGGACTGGTCGTCGACTTCGTGCTGCGCCTGTCCA\nGTTACGTTGCTGGACAGGAGCTGA\n"
+	#fasta_dna_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
+	tmp_gene_filename = 'tmp_' + org_name + '_gene.fsa.gz'
+	tmp_gene_file = gzip.open(tmp_gene_filename, 'wb') 
+	tmp_gene_file.write(fasta_gene_entry)
+	tmp_gene_file.close()
+
+	# Create temporary protein FASTA file
+	fasta_protein_entry = ">jgi|Aspac1|43358|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
+	#fasta_protein_entry = ">scaffold_1\nTTTTTAATTTTCGAACTAACTAAAAAAACTTTTATTTAATCTGATAAAAA\nAAACCAACtattattatattaaattctaattatatattttatttagttta\nttaattttttaataatattaCAGAGAAGAGCAGTAATTACTGTAGACtta\n>scaffold_7\ntaatgtaaaccctaatgtaaaccctaatgtaaaccctaatgtaaacccta\natgtaaaccctaatgtaaccctaacccccctaatctgacaaccctaaTGT\nAATACCTTCGGCGGAAGGTTTATCCGGTGCTGACGGGCCGAGGTTTCTCC"
+	tmp_protein_filename = 'tmp_' + org_name + '_protein.fsa.gz'
+	tmp_protein_file = gzip.open(tmp_protein_filename, 'wb') 
+	tmp_protein_file.write(fasta_protein_entry)
+	tmp_protein_file.close()
+
+	# Test different versions of FASTA function
+	action = "test"
+	org_id = fasta(org_name, tmp_gene_filename, action, "tf", dbname, args.prefix)
+	org_id = fasta(org_name, tmp_protein_filename, action, "pf", dbname, args.prefix)
+	org_id = fasta(org_name, tmp_gene_filename, action, "cf", dbname, args.prefix)
+	org_id = fasta(org_name, tmp_dna_filename, action, "ma", dbname, args.prefix)
+
+	# Test annotation functions
+	# Create temporary GFF TAB file
+	# Create temporary KOG TAB file
+	# Create temporary SignalP TAB file
+	# Create temporary GO TAB file
+	# Create temporary KEGG TAB file
+	# Create temporary Interpro TAB file
+	"""
+	org_id = gff 	(org_name, path, action, dbname)
+	org_id = kog 	(org_name, path, action, dbname)
+	org_id = sigp 	(org_name, path, action, dbname)
+	org_id = go 	(org_name, path, action, dbname)
+	org_id = kegg 	(org_name, path, action, dbname)
+	org_id = ipr 	(org_name, path, action, dbname)
+	"""
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### ARGUMENTS ############################################################
@@ -68,10 +127,6 @@ parser.add_argument("-verbose", "-v", required=False, help="R|Increase output ve
 
 args = parser.parse_args()
 
-if args.verbose:
-	test()
-	sys.exit
-
 #------------------------------------------------------------------
 # Check prefix validity 
 # user can define a prefix to force the duplicated entering of an organism in the database
@@ -87,6 +142,13 @@ print "# ARGUMENTS :\n# source\t:%s\n# filetype\t:%s\n# action\t:%s\n# prefix\t:
 print "#--------------------------------------------------------------"
 
 #------------------------------------------------------------------
+# Test functions
+#------------------------------------------------------------------
+if args.verbose:
+	test()
+	sys.exit("# FINISHED testing functions")
+
+#------------------------------------------------------------------
 # Connect to specific DB
 #------------------------------------------------------------------
 try:
@@ -95,7 +157,6 @@ try:
 except mdb.Error, e:
     sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-sys.exit()	
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### Main #################################################################
@@ -107,55 +168,55 @@ action = args.action
 dbname = args.dbname
 
 allfiles = []
-org_name = ''
-org_id = ''
+org_name = ""
+org_id = ""
 
-#------------------------------------------------------------------
+# Define organism key/name
+if args.orgkey:
+	org_name = arg.orgkey
+elif re.search("\[(.+)\]", str(args.source)):
+	org_name = (re.search("\[(.+)\]", str(args.source))).group(1)
+else:
+	sys.exit("# ERROR: organism key was not defined and could not be determined from path")
+
+print "# INFO: organism key/name was determined from path: ", org_name
+
+
 # Load entire JGI directory structure
-#------------------------------------------------------------------
 if filetype == "dir":
 	
-	#------------------------------------------------------------------
 	# Make sure that the path exists
-	#------------------------------------------------------------------
 	if os.path.exists(source):	print "# INFO: path exists: %s" % source 
 	else:	sys.exit("# ERROR: path does not exists" )
 	
-	#------------------------------------------------------------------
-	# Loop through all files in directory
-	#------------------------------------------------------------------
+	# Loop through all files in directory and check if it is empty
 	for root, subfold, files in os.walk(source):
 		allfiles.append(files)
 		
-		#------------------------------------------------------------------
-		# Exit if no files are found
-		#------------------------------------------------------------------
-		if allfiles == []:
-			sys.exit("# ERROR: directory is empty")
+	if allfiles == []:
+		sys.exit("# ERROR: directory is empty")
 		
 	print "#--------------------------------------------------------------"
 	print "# INFO: reading sequence data files"
 	print "#--------------------------------------------------------------"
 
-	#------------------------------------------------------------------
 	# Create file of complete file list for the project
-	#------------------------------------------------------------------
 	filelist = open(org_name+'_filelist.txt', 'w') 
-	"""
+
 	for root, subfold, files in os.walk(source):
 		for filename in files: 
-			path = root + "/" + f
+			path = root + "/" + filename
+
+			# Write all file names to file list for future reference	
 			filelist.write(path)
 			filelist.write("\n")
 			
-			if not re.search(r"fasta", filename) and re.search(r"gz$", filename): continue
-			
-			#------------------------------------------------------------------
 			# Read genecatalog files, fasta and gff
 			# These structures will try to automatically deside what data is found in each file
 			# assumption: all protein fasta files countain the word "proteins" and "fasta" in the file name
-			# The same sort of assumptions are made for trasncripts, cds and assemblies
-			#------------------------------------------------------------------
+			# The same sort of assumptions are made for transcripts, cds and assemblies
+			if not re.search(r"fasta", filename) and re.search(r"gz$", filename): continue
+			
 			if re.search("_(GeneCatalog|filtered)_transcripts", filename):
 				org_id = fasta(org_name,path, action, "tf", dbname, args.prefix)
 
@@ -169,7 +230,7 @@ if filetype == "dir":
 				if not re.search(r"unmasked", str(path)):
 					org_id = fasta(org_name,path, action, "ma", dbname, args.prefix)
 	filelist.close()
-	"""
+	
 	print "#--------------------------------------------------------------"
 	print "# INFO: reading annotation files"
 	print "#--------------------------------------------------------------"
@@ -179,10 +240,7 @@ if filetype == "dir":
 			path = root + "/" + filename
 			if not re.search("(GeneCatalog|filtered)", filename) and re.search(r"gz$", filename): continue
 			
-			#------------------------------------------------------------------
-			# Read genecatalog files, fasta and gff
-			#------------------------------------------------------------------
-			"""
+			# Read genecatalog files, gff and annotations
 			if re.search(r"gff\.", filename):
 				org_id = gff(org_name,path, action, dbname)
 
@@ -191,13 +249,80 @@ if filetype == "dir":
 
 			elif re.search(r"_SigP", filename):
 				org_id = sigp(org_name,path, action, dbname)
-			"""
-			if re.search(r"_GO", filename):
+
+			elif re.search(r"_GO", filename):
 				org_id = go(org_name,path, action, dbname)
-			"""
 			elif re.search(r"_KEGG", filename):
 				org_id = kegg(org_name,path, action, dbname)
 
 			elif re.search(r"_IPR", filename):
 				org_id = ipr(org_name,path, action, dbname)
-			"""
+
+#------------------------------------------------------------------
+# Load individual files
+#------------------------------------------------------------------
+
+else: 	
+	if os.path.isfile(source):
+		print "# INFO: file exists: %s" % source 
+	else:
+		sys.exit("# ERROR: file does not exists" )
+		
+	if filetype == "uma" or filetype == "ma" or filetype == "pf" or filetype == "tf" or filetype == "cf":
+		org_id = fasta(org_name,source, action, filetype, dbname, args.prefix)
+		
+	elif filetype == "gff":
+		org_id = gff(org_name,source, action, dbname)
+
+	elif filetype == "kog":
+		org_id = kog(org_name,source, action, dbname)
+
+	elif filetype == "sigp":
+		org_id = sigp(org_name,source, action, dbname)
+
+	elif filetype == "go":
+		org_id = go(org_name,source, action, dbname)
+
+	elif filetype == "kegg":
+		org_id = kegg(org_name,source, action, dbname)
+
+	elif filetype == "ipr":
+		org_id = ipr(org_name,source, action, dbname)
+	else:
+		sys.exit("ERROR: filetype has no defined action")
+
+#------------------------------------------------------------------
+# At this point the org_id should have been defined by one or more functions
+# If this has not happened something went wrong
+#------------------------------------------------------------------
+print "#--------------------------------------------------------------"
+print "# INFO: Final error handling"
+print "#--------------------------------------------------------------"
+
+if org_id:
+	print "# INFO Organism id: ", org_id
+else:
+	sys.exit("# ERROR: something went wrong, organism ID was not returned, filetype = %s" % source)
+	
+#------------------------------------------------------------------
+# Print database content for organism
+#------------------------------------------------------------------
+db = mdb.connect("localhost","asp","1234",dbname)
+cursor = db.cursor()
+cursor.execute("SELECT organism.org_id, name, ( SELECT count(*) from proteins where org_id=%s), ( SELECT count(*) from transcripts where org_id=%s ), ( SELECT count(*) from assembly where org_id=%s ), ( SELECT count(*) from cds where org_id=%s ) from organism where org_id = %s" % (org_id,org_id,org_id,org_id,org_id))
+results = cursor.fetchall()
+print "# INFO database data: " , (results)
+
+if results[0][2] == 0:
+	print "# WARNING: no protein data has been loaded for this project"
+if results[0][3] == 0:
+	print "# WARNING: no transcript data has been loaded for this project"
+if results[0][4] == 0:
+	print "# WARNING: no assembly data has been loaded for this project"
+if results[0][5] == 0:
+	print "# WARNING: no cds data has been loaded for this project"
+
+#------------------------------------------------------------------
+# Print program runtime
+#------------------------------------------------------------------
+print "# INFO Runtime: ", (datetime.now()-startTime)

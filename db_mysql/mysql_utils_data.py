@@ -9,24 +9,14 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-#from mysql_classes import Fasta	# custom class
-import pprint
-import numpy
+from utilsDataFormats import *
+#import numpy
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### UTILS ################################################################
 ##############################################################################################################################################
 ##############################################################################################################################################
 
-#######################################################################
-# Function tester
-#######################################################################
-def test():
-	(org_name, dbname) = ("Aspni1", "aspminedb")
-	org_id = get_org_id(org_name, dbname, 1)
-	print type(org_id)
-	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
-		sys.exit("# ERROR: get_org_id does not return an integer number")
 
 #######################################################################
 # Fetch or create organism _id, auto increment 
@@ -60,6 +50,7 @@ def get_org_id(org_name, dbname, test):
 		db.close()
 		return org_id[0]
 
+"""
 #######################################################################
 # get_org_seqname_from_prot_id
 #######################################################################
@@ -83,7 +74,7 @@ def get_org_seqname_from_prot_id (prot_id, org_name, dbname):
 	db.close()
 	
 	return org_id, prot_seq_name, result
-
+"""
 #######################################################################
 # Handle file format check
 #######################################################################	
@@ -138,7 +129,9 @@ def gzip_fasta_file (filepath):
 
 #######################################################################
 # Handle FASTA data
+# INFO: This function calls the load_fasta_files function
 #######################################################################
+
 def fasta (org_name, filepath, action, filetype, dbname, prefix):
 	(totalcounter, counter) = (0,0)
 	org_id = ''
@@ -158,49 +151,46 @@ def fasta (org_name, filepath, action, filetype, dbname, prefix):
 
 	# Protein FASTA ------------------------------------
 	if filetype == "pf":
-		name = "protein-FASTA"
 		insertQuery = "REPLACE INTO proteins(prot_orgkey, prot_seqkey, prot_tailkey, prot_seqname, prot_seq, org_id, prot_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
 		
 	# DNA FASTA ------------------------------------
 	elif filetype == "tf":
-		name = "transcript-FASTA"
 		insertQuery = "REPLACE INTO transcripts(trans_orgkey, trans_seqkey, trans_tailkey, trans_seqname, trans_seq, org_id, trans_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
 
 	elif filetype == "cf":
-		name = "cds-FASTA"
 		insertQuery = "REPLACE INTO cds(cds_orgkey, cds_seqkey, cds_tailkey, cds_seqname, cds_seq, org_id, cds_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
 
 	elif filetype == "uma" or filetype == "ma":
-		name = "assembly-FASTA"
 		insertQuery = "REPLACE INTO assembly(assembly_orgkey, assembly_seqkey, assembly_tailkey, assembly_seqname, assembly_seq, org_id, assembly_orgseq) values(%s,%s,%s,%s,%s,%s,%s);"
 		
 	else:
 		sys.exit("# ERROR: filetype not recognized %s" % filename)
 	
-	return load_fasta_files(name, valueSortLine, insertQuery, org_name, filepath, action, dbname)	
+	return load_fasta_files(filetype, valueSortLine, insertQuery, org_name, filepath, action, dbname)	
 
 
 #######################################################################
 # Load FASTA type files
 #######################################################################
-def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action, dbname):
+def load_fasta_files(filetype, valueSortLine, insertQuery, org_name,filepath, action, dbname):
+	filename = filepath.split("/")[-1]
+	print "# INFO Processing %s file with action %s: %s " % (filetype, action, filename)
+
+	# Init counters
 	(totalcounter, counter) = (0,0)
+
+	# Init data structures
 	values_to_insert = []
 	valuehash = {}
 
+	# Unzip file and store in list ------------------------------------
+	records = gzip_fasta_file(filepath) 
+
 	# Only get the org_id once and not for all records ------------------------------------
 	org_id = get_org_id(org_name, dbname, 0) 
-	filename = filepath.split("/")[-1]
-
-	if action == "load":	print "# LOADING %s file: %s" % (name, filename)
-	else:					print "# TESTING %s file: %s" % (name, filename)
-
-	# function to unzip file and store in list ------------------------------------
-	records = gzip_fasta_file(filepath) 
 	
 	# If this is empty, there was nothing that matched a FASTA format in the file	 ------------------------------------
-	if len(list(records)) < 1:	
-		sys.exit("# ERROR: Not FASTA format or empty FASTA entry")
+	if len(list(records)) < 1:	sys.exit("# ERROR: Not FASTA format or empty FASTA entry")
 
 	for r in records:
 		counter += 1
@@ -208,29 +198,13 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 		values = ()
 
 		# Store variable names in dict and get values from record ------------------------------------
-		if name == "protein-FASTA":
-			# Make "sure" sequence is Protein ------------------------------------ 
-			non_ExtendedIUPACProtein = set(str(r.seq.lower())) - set("ACDEFGHIKLMNPQRSTVWYBXZJUO".lower()) 
-			# ExtendedIUPACProtein: ACDEFGHIKLMNPQRSTVWYBXZJUO http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.ExtendedIUPACProtein-class.html
-			
-			if len(non_ExtendedIUPACProtein) != 0:
-				if len(non_ExtendedIUPACProtein) == 1 and "*" in non_ExtendedIUPACProtein:
-					warning = "Found ambiguouse symbol: *"
-				else:
-					sys.exit("# ERROR : Found amino ac_ids other than ACDEFGHIKLMNPQRSTVWYBXZJUO = %s" % ",".join(non_ExtendedIUPACProtein))
+		if filetype == "pf":
+			# Make "sure" sequence is amino acids ------------------------------------ 
+			check_seq_protein(r.seq)
 
-		if name == "assembly-FASTA" or name == "transcirpt-FASTA" or name == "cds-FASTA": 
+		if filetype == "ma" or filetype == "tp" or filetype == "cp" or filetype == "uma": 
 			# Make "sure" sequence is DNA ------------------------------------ 
-			non_IUPACUnambiguousDNA = set(str(r.seq.lower())) - set("atcg") 
-			# ExtendedIUPACDNA : GATCBDSW http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.ExtendedIUPACDNA-class.html
-			# IUPACAmbiguousDNA : GATCRYWSMKHBVDN http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.IUPACAmbiguousDNA-class.html
-			# IUPACUnambiguousDNA : GATC http://biopython.org/DIST/docs/api/Bio.Alphabet.IUPAC.IUPACUnambiguousDNA-class.html
-			
-			if len(non_IUPACUnambiguousDNA) > 0:
-				if len(non_IUPACUnambiguousDNA) == 1 and "n" in non_IUPACUnambiguousDNA:
-					warning = "Found ambiguouse base: N"
-				else:
-					sys.exit("# ERROR : Found bases other than A, T, G, C or N: " + ",".join(non_IUPACUnambiguousDNA))
+			check_seq_dna(r.seq)
 
 		valuehash["seqname"]	= (r.description,)
 		valuehash["seq"]		= (str(r.seq.lower()),)
@@ -240,24 +214,24 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 			valuehash["seqkey"]		= (r.description.split(" ")[0].split("|")[2],)
 			valuehash["tailkey"]	= (r.description.split(" ")[0].split("|")[3],)
 			# EXAMPLE: jgi|Aspac1|10177|gw1.1.1170.1
-			valuehash["orgseq"] 	= 	(valuehash["orgkey"]+"_"+valuehash["seqkey"],)	 
 		else:
 			valuehash["orgkey"]		= (org_name,)
 			valuehash["seqkey"]		= (r.description.split(" ")[0],)
 			valuehash["tailkey"]	= ('',)
-			valuehash["orgseq"]		= (valuehash["orgkey"]+"_"+valuehash["seqkey"],)
+
+		valuehash["orgseq"]		= (str(org_id)+"_"+valuehash["seqkey"][0],)
 				
 		# create list of values to be inserted ------------------------------------
 		for val in valueSortLine:	
-			# NOT FOUND IN FILE BUT OBTAINED FROM DB ------------------------------------
+			# org_id is NOT FOUND IN FILE BUT OBTAINED FROM DB ------------------------------------
 			if val == "org_id":	values += (org_id,)	
 			else: 				values += valuehash[val]
 			
 		# Create sets of lists of values ------------------------------------
 		values_to_insert.append(values) 
 		
-		# MySQL will only allow a certain data insert size so for assemblies  ------------------------------------
-		if name == "assembly-FASTA" : counter_threshold = 2 
+		# MySQL will only allow a certain data insert size ------------------------------------
+		if filetype == "ma" : counter_threshold = 2 
 		counter_threshold = 1000
 		
 		if action == "load" and ( counter == counter_threshold or totalcounter == len(records)):
@@ -267,16 +241,30 @@ def load_fasta_files(name, valueSortLine, insertQuery, org_name,filepath, action
 				db = mdb.connect("localhost","asp","1234",dbname)
 				cursor = db.cursor()
 				cursor.executemany(insertQuery,values_to_insert)
-				db.commit()
-				db.close()
 				
+				# add the changes to the db  ------------------------------------
+				db.commit() 
+
+				# dont leave the db connection open  ------------------------------------
+				db.close()	
+				
+				# reset counter and values to insert ------------------------------------
 				counter = 0 
 				values_to_insert = []
 
 			except mdb.Error, e:
-				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
+				sys.exit( "# ERROR utils %s %d: %s" % (filetype, e.args[0],e.args[1]))
 
-	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
+	# If user is only testing or has chosen verbose mode - print example variable values			
+	if action == "test":
+		print "# Query: %s\n# Values: %s" % (insertQuery,values_to_insert[0])		
+
+	# Make sure output is the right format	
+	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
+		sys.exit("# ERROR: function fasta does not return an integer number")
+
+	print "# FINISHED %s file: %s with total number of records %s\n" % (filetype, filename, totalcounter)
+
 	return org_id	
 
 ##############################################################################################################################################
@@ -303,33 +291,33 @@ def parse_go_line(line):
 	i = 1
 	j = len(segments) - 1
 
-	# Read IDs
-	# Note: i put i<j here to force this to terminate at some point   ------------------------------------
+	# Read IDs Note: i put i<j here to force this to terminate at some point   ------------------------------------
+	# Move 'i' forward because of break
 	while(i<j): 
 		if(segments[i] != "|"):
 			id_list.append(int(segments[i]))
 			if(segments[i+1] != "|"):
 				break
 		i += 1
-	# Move 'i' forward because of break  ------------------------------------
 	i += 1	
 
 	# Read GO accession numbers  ------------------------------------
+	# Move 'j' backward because of break
 	while(i<j):
 		if(segments[j] != "|"):
 			acc_list.append(segments[j])
 			if(segments[j-1] != "|"):
 				break
 		j-= 1
-	# Move 'j' backward because of break  ------------------------------------
 	j -= 1	
 
-	while(i<j):	# Read GO types
+	# Read GO types  ------------------------------------
+	# No need to move j at this point
+	while(i<j):	
 		if(segments[j] != "|"):
 			type_list.append(segments[j])
 			if(segments[j-1] != "|"):
 				break
-		# No need to move j at this point  ------------------------------------
 		j -= 1	
 	
 
@@ -414,6 +402,10 @@ def load_tab_files(name, nrtab, valueLine, insertQuery, org_name,filepath, actio
 		print "# INFO: query %s value %s" % ( insertQuery, values_to_insert )
 						
 	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
+
+	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
+		sys.exit("# ERROR: load_tab_files does not return an integer number")
+
 	return org_id	
 	
 #######################################################################
