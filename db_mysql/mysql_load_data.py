@@ -20,60 +20,21 @@ from datetime import datetime
 ####################################################################### TEST ############################################################
 ##############################################################################################################################################
 ##############################################################################################################################################
-def test():
-	(org_name, dbname, prot_id) = ("Aspni1", "aspminedb", "19949")
-
-	# Test get_org_id
-	org_id = get_org_id(org_name, dbname, 1)
-	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
-		sys.exit("# ERROR: get_org_id does not return an integer number")
-
-	# Create temporary dna FASTA file
-	fasta_dna_entry = ">scaffold_1\nTTTTTAATTTTCGAACTAACTAAAAAAACTTTTATTTAATCTGATAAAAA\nAAACCAACtattattatattaaattctaattatatattttatttagttta\nttaattttttaataatattaCAGAGAAGAGCAGTAATTACTGTAGACtta\n>scaffold_7\ntaatgtaaaccctaatgtaaaccctaatgtaaaccctaatgtaaacccta\natgtaaaccctaatgtaaccctaacccccctaatctgacaaccctaaTGT\nAATACCTTCGGCGGAAGGTTTATCCGGTGCTGACGGGCCGAGGTTTCTCC"
-	#fasta_dna_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
-	tmp_dna_filename = 'tmp_' + org_name + '_dna.fsa.gz'
-	tmp_dna_file = gzip.open(tmp_dna_filename, 'wb') 
-	tmp_dna_file.write(fasta_dna_entry)
-	tmp_dna_file.close()
-
-	# Create temporary gene dna FASTA file
-	fasta_gene_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nATGTCCCCTGCCTTTCGCATTCAAGCTATCTCGATACCCAATAATTACTTGCCTCCACGCAAGTCGTTCA\nATCTCTCATATTGGGACGTCATGGCTCAGGAGTGGCTCGTCGCTCCCGGCTCATATAATGTCTTCATTGG\nCGCGAGCTCACGCGACCTAAGACTGAATGGAACGTTTTCTTTGACTGTTACAGCCTAA\n>jgi|Aspac1|37826|Genemark1.2_g\nATGGATTGCGACGAGACAAAGCCCGAGTGCTCGAACTGCGTCAACCATTCTGTGCGCTGTATCTACGATT\nTGCGTGGATGTTTTTGGAGGAGGAGGAGCGGGGGTTGGTGAGATGGTTGATTGACGATGTCGGGGTGTTG\nGGGTTGTCTGGTTGA\n>jgi|Aspac1|37827|Genemark1.3_g\nATGGTCCGGGGTATTATCTTCCAGCTCGTATTCGTGGGACTGGTCGTCGACTTCGTGCTGCGCCTGTCCA\nGTTACGTTGCTGGACAGGAGCTGA\n"
-	#fasta_dna_entry = ">jgi|Aspac1|48858|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
-	tmp_gene_filename = 'tmp_' + org_name + '_gene.fsa.gz'
-	tmp_gene_file = gzip.open(tmp_gene_filename, 'wb') 
-	tmp_gene_file.write(fasta_gene_entry)
-	tmp_gene_file.close()
-
-	# Create temporary protein FASTA file
-	fasta_protein_entry = ">jgi|Aspac1|43358|fgenesh1_pm.1_#_1\nMSPAFRIQAISIPNNYLPPRKSFTPLLSPLSPSLRLFGRYSLHRHLLVELGEWEAAYEKASAFVADLTTA\nRGFERVEIDSGGHSYVIFDLRRRDLSYWDVMAQEWLVAPGSYNVFIGASSRDLRLNGTFSLTVTA*\n>jgi|Aspac1|37826|Genemark1.2_g\nMDCDETKPECSNCVNHSVRCIYDSPAPKTKKPVTLPAQTHKTENKVQVQFVEFNFLHVQPAPAPVPATPA\nRLEQPFWEALQRKQPVALMLVAHFAALMRWMDGTWVSVGWPEHILRGAWMFLEEEERGLVRWLIDDVGVL\nGLSG*\n>jgi|Aspac1|37827|Genemark1.3_g\nMVRGIIFQLVFVGLVVDFVLRLSKRGRPQALWSNRPLLLLGGATALSLLLIYIRSVYRTIELLHGWTSST\nMHNEMLLIGLDGAIMVPAFSVYNLLHPGYLLPKVQREVGYLDARGLQMEMEAVKDGRYQIVEVEGGKDDS\nVTLLDRS*"
-	#fasta_protein_entry = ">scaffold_1\nTTTTTAATTTTCGAACTAACTAAAAAAACTTTTATTTAATCTGATAAAAA\nAAACCAACtattattatattaaattctaattatatattttatttagttta\nttaattttttaataatattaCAGAGAAGAGCAGTAATTACTGTAGACtta\n>scaffold_7\ntaatgtaaaccctaatgtaaaccctaatgtaaaccctaatgtaaacccta\natgtaaaccctaatgtaaccctaacccccctaatctgacaaccctaaTGT\nAATACCTTCGGCGGAAGGTTTATCCGGTGCTGACGGGCCGAGGTTTCTCC"
-	tmp_protein_filename = 'tmp_' + org_name + '_protein.fsa.gz'
-	tmp_protein_file = gzip.open(tmp_protein_filename, 'wb') 
-	tmp_protein_file.write(fasta_protein_entry)
-	tmp_protein_file.close()
-
-	# Test different versions of FASTA function
-	action = "test"
-	org_id = fasta(org_name, tmp_gene_filename, action, "tf", dbname, args.prefix)
-	org_id = fasta(org_name, tmp_protein_filename, action, "pf", dbname, args.prefix)
-	org_id = fasta(org_name, tmp_gene_filename, action, "cf", dbname, args.prefix)
-	org_id = fasta(org_name, tmp_dna_filename, action, "ma", dbname, args.prefix)
-
-	# Test annotation functions
-	# Create temporary GFF TAB file
-	# Create temporary KOG TAB file
-	# Create temporary SignalP TAB file
-	# Create temporary GO TAB file
-	# Create temporary KEGG TAB file
-	# Create temporary Interpro TAB file
-	"""
-	org_id = gff 	(org_name, path, action, dbname)
-	org_id = kog 	(org_name, path, action, dbname)
-	org_id = sigp 	(org_name, path, action, dbname)
-	org_id = go 	(org_name, path, action, dbname)
-	org_id = kegg 	(org_name, path, action, dbname)
-	org_id = ipr 	(org_name, path, action, dbname)
-	"""
+# Test annotation functions
+# Create temporary GFF TAB file
+# Create temporary KOG TAB file
+# Create temporary SignalP TAB file
+# Create temporary GO TAB file
+# Create temporary KEGG TAB file
+# Create temporary Interpro TAB file
+"""
+org_id = gff 	(org_name, path, action, dbname)
+org_id = kog 	(org_name, path, action, dbname)
+org_id = sigp 	(org_name, path, action, dbname)
+org_id = go 	(org_name, path, action, dbname)
+org_id = kegg 	(org_name, path, action, dbname)
+org_id = ipr 	(org_name, path, action, dbname)
+"""
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### ARGUMENTS ############################################################
@@ -145,7 +106,16 @@ print "#--------------------------------------------------------------"
 # Test functions
 #------------------------------------------------------------------
 if args.verbose:
-	test()
+	test__get_org_id()
+	test__fasta()
+
+	#test__gff()
+	#test__ipr()
+	#test__kegg()
+	#test__go()
+	#test__sigp()
+	#test__kog()
+
 	sys.exit("# FINISHED testing functions")
 
 #------------------------------------------------------------------
@@ -181,21 +151,12 @@ else:
 
 print "# INFO: organism key/name was determined from path: ", org_name
 
-
 # Load entire JGI directory structure
 if filetype == "dir":
 	
-	# Make sure that the path exists
-	if os.path.exists(source):	print "# INFO: path exists: %s" % source 
-	else:	sys.exit("# ERROR: path does not exists" )
+	# Verify source 
+	source_exists("dir", source)
 	
-	# Loop through all files in directory and check if it is empty
-	for root, subfold, files in os.walk(source):
-		allfiles.append(files)
-		
-	if allfiles == []:
-		sys.exit("# ERROR: directory is empty")
-		
 	print "#--------------------------------------------------------------"
 	print "# INFO: reading sequence data files"
 	print "#--------------------------------------------------------------"
@@ -265,10 +226,8 @@ if filetype == "dir":
 #------------------------------------------------------------------
 
 else: 	
-	if os.path.isfile(source):
-		print "# INFO: file exists: %s" % source 
-	else:
-		sys.exit("# ERROR: file does not exists" )
+	# Verify source 
+	source_exists("file", source)
 		
 	if filetype == "uma" or filetype == "ma" or filetype == "pf" or filetype == "tf" or filetype == "cf":
 		org_id = fasta(org_name,source, action, filetype, dbname, args.prefix)
@@ -315,14 +274,15 @@ cursor.execute("SELECT organism.org_id, name, ( SELECT count(*) from proteins wh
 results = cursor.fetchall()
 print "# INFO database data: " , (results)
 
-if results[0][2] == 0:
-	print "# WARNING: no protein data has been loaded for this project"
-if results[0][3] == 0:
-	print "# WARNING: no transcript data has been loaded for this project"
-if results[0][4] == 0:
-	print "# WARNING: no assembly data has been loaded for this project"
-if results[0][5] == 0:
-	print "# WARNING: no cds data has been loaded for this project"
+if action == "load":
+	if results[0][2] == 0:
+		print "# WARNING: no protein data has been loaded for this project"
+	if results[0][3] == 0:
+		print "# WARNING: no transcript data has been loaded for this project"
+	if results[0][4] == 0:
+		print "# WARNING: no assembly data has been loaded for this project"
+	if results[0][5] == 0:
+		print "# WARNING: no cds data has been loaded for this project"
 
 #------------------------------------------------------------------
 # Print program runtime
