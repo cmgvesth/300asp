@@ -143,10 +143,11 @@ org_id = ""
 
 # Define organism key/name
 if args.orgkey:
-	org_name = arg.orgkey
+	org_name = args.orgkey
 elif re.search("\[(.+)\]", str(args.source)):
 	org_name = (re.search("\[(.+)\]", str(args.source))).group(1)
 else:
+	parser.print_help()
 	sys.exit("# ERROR: organism key was not defined and could not be determined from path")
 
 print "# INFO: organism key/name was determined from path: ", org_name

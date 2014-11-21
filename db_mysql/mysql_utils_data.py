@@ -241,11 +241,25 @@ def load_fasta_files(filetype, valueSortLine, insertQuery, org_name,filepath, ac
 ####################################################################### ANNOTATIONS ##########################################################
 ##############################################################################################################################################
 ##############################################################################################################################################
+#######################################################################
+# Parse generic annotation lines
+#######################################################################
+def parse_generic_annotation_line(line):
+	annotations = []
+	# pattern for KEGG files
+	if re.search(r"\\N", line):
+		annotations = line.replace("\N", "NULL").split("\t")
+	else:	
+		annotations = line.split("\t")
+	if len(annotations) < 1:
+		sys.exit("# ERROR: annotation line is empty, %s" % line)	
+	return annotations
 
+"""
+def parse_GO_annotation_line(line):
+######################################################################
+# Parse GO annotation lines
 #######################################################################
-# Parse lines
-#######################################################################
-def parse_annotation_line(line):
 	segments = line.replace("\t", " ").split(" ")
 	
 	# Pull the ID value from the first segment
@@ -266,7 +280,7 @@ def parse_annotation_line(line):
 	# Move 'i' forward because of break
 	while(i<j): 
 		if(segments[i] != "|"):
-			id_list.append(int(segments[i]))
+			id_list.append(str(segments[i]))
 			if(segments[i+1] != "|"):
 				break
 		i += 1
@@ -292,11 +306,11 @@ def parse_annotation_line(line):
 				break
 		j -= 1	
 	
-
 	# Read go terms  ------------------------------------
 	remaining = " ".join(segments[i:j])
 	term_list = remaining.split(" | ")
 
+	#print term_list
 	# Check Results  ------------------------------------
 	l1 = len(id_list)
 	if(l1 == 0):
@@ -309,17 +323,73 @@ def parse_annotation_line(line):
 	# valueLine2 = ["protein_id", "goterm_id", "org_id"]
 
 	#return [(protein_id, ann_id, ann_term, ann_type, ann_acc) for (ann_id, ann_term, ann_type, ann_acc) in zip(id_list, term_list, reversed(type_list), reversed(acc_list))]
+	#print zip(protein_list, id_list, term_list, reversed(type_list), reversed(acc_list))
 	return zip(protein_list, id_list, term_list, reversed(type_list), reversed(acc_list))
+
+"""
+
+#######################################################################
+# Parse InterPro annotation lines
+#######################################################################
+def parse_IPR_annotation_line(line):
+	annotations = []
+	tab_fields = line.split("\t")
+	tab_fields = [t.rstrip(",") for t in tab_fields]
+
+	# If the domain count fieled is more than 1, process line accordingly
+	if int(tab_fields[6]) > 1:
+		starts_list	= tab_fields[7].split(",")
+		ends_list	= tab_fields[8].split(",")
+		score_list	= tab_fields[9].split(",")
+
+		# If the number of values is not the same something went wrong
+		if len(starts_list) != len(ends_list) or len(starts_list) != len(score_list):
+			sys.exit("# ERROR: number of elements in starts, ends or scores is not the same %s" % str(tab_fields))
+
+		for e in range(0,len(starts_list)):
+			annotations.append( tuple(tab_fields[0:7] + [ starts_list[e] , ends_list[e] , score_list[e] ]) )	
+	# Add value line as annotation		
+	else:
+		annotations.append( tuple(tab_fields[0:]) )
+	return annotations
+			
+#######################################################################
+# Parse GO annotation lines
+#######################################################################
+def parse_GO_annotation_line(line):
+	annotations = []
+	tab_fields = line.split("\t")
+	tab_fields = [t.replace(" | ", "|") for t in tab_fields]
+
+	# If there is more than one value in the first field, process line accordingly
+	if len(tab_fields[1].split("|")) > 1:
+		term_list	= tab_fields[1].split("|")
+		name_list	= tab_fields[2].split("|")
+		type_list	= tab_fields[3].split("|")
+		acc_list	= tab_fields[4].split("|")
+
+		# If the number of values is not the same something went wrong
+		if len(term_list) != len(name_list) or len(term_list) != len(type_list):
+			sys.exit("# ERROR: number of elements in terms, name or type is not the same %s" % str(tab_fields))
+
+		for e in range(0,len(term_list)):
+			annotations.append( tuple([tab_fields[0]] + [ term_list[e] , name_list[e] , type_list[e] , acc_list[e]]) )	
+	# Add value line as annotation		
+	else:
+		annotations.append( tuple(tab_fields[0:]) )
+	return annotations
+
 #######################################################################
 # Load tab type files
 #######################################################################
-def load_tab_files(name, nrtab, valueLine, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname):
+def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname):
 	# Init counters ------------------------------------
 	(totalcounter, counter) = (0,0)
 
 	# Init data structures ------------------------------------
 	main_insert_values = []
 	connect_insert_values = []
+	annotations = []
 	valuedict = {}
 	filename = filepath.split("/")[-1]
 	
@@ -333,41 +403,49 @@ def load_tab_files(name, nrtab, valueLine, main_insertQuery, connect_insertQuery
 	check_tab_format (nrtab, records) 
 	
 	# Only get the org_id once and not for all records ------------------------------------
-	if action == "test": org_id = get_org_id(org_name, dbname, 1) 
+	if action == "test": 
+		org_id = get_org_id(org_name, dbname, 1) 
+		print "# INFO: number of annotation records %s for organism id %s" % (len(records), org_id)
 	else: org_id = get_org_id(org_name, dbname, 0) 
+
 
 	for r in records:
 		counter += 1
 		totalcounter += 1
-		
-
+		valuedict["org_id"] = (org_id,)
 		# Function to deal with multi value tab fields (protein_id 	valueA | valueB)
-		annotations = parse_annotation_line(r)
-		
-		for annset in annotations:
-			# First element of valueline is the org id, the secund is the protein id
-			valuedict[valueLine[0]] = (org_id,)
-			valuedict[valueLine[1]] = (annset[0],)
+		if 		name == "GO": 		annotations = parse_GO_annotation_line(r)
+		elif 	name == "InterPro": annotations = parse_IPR_annotation_line(r)
+		else: 						annotations = parse_generic_annotation_line(r)
 
-			# Store the remaing values in the valuedict
-			for var in range(1,len(valueLine)):	
-				valuedict[valueLine[var]] = (annset[var-1],)
+		#print annotations
 
-			# Main annotation table - not organism specific, no org or protein information	
-			# Clear the values list and sort valuedict by the given value line
-			# Add each value to a list and add each list to the insert list
-			values = ()
-			for value in [valuedict[k] for k in valueLine[2:]]:
-				values += value	
-			main_insert_values.append(values)
+		if name == "GO" or name == "InterPro":
+			for annotation in annotations:
+				for key in line_values:
+					valuedict[key] = (annotation[line_values.index(key)],) 
+		else:			
+			for key in line_values:
+				valuedict[key] = (annotations[line_values.index(key)],) 
 
-			# Connection annotation table - only org, protein and annotation ids, no annotation information	
-			# Clear the values list and sort valuedict by the given value line
-			# Add each value to a list and add each list to the insert list
-			values = ()
-			for value in [valuedict[k] for k in valueLine[0:3]]:
-				values += value	
-			connect_insert_values.append(values)
+		#print annotations
+
+		# Main annotation table - not organism specific, no org or protein information	
+		# Clear the values list and sort valuedict by the given value line
+		# Add each value to a list and add each list to the insert list
+		values = ()
+		for value in [valuedict[k] for k in main_values]:
+			values += value	
+		main_insert_values.append(values)
+
+		# Connection annotation table - only org, protein and annotation ids, no annotation information	
+		# Clear the values list and sort valuedict by the given value line
+		# Add each value to a list and add each list to the insert list
+		values = ()
+		for value in [valuedict[k] for k in connect_values]:
+			values += value	
+		connect_insert_values.append(values)
+
 
 		if action == "load" and ( counter == 1000 or totalcounter == len(records)):
 			# Print insert information  ------------------------------------
@@ -387,14 +465,18 @@ def load_tab_files(name, nrtab, valueLine, main_insertQuery, connect_insertQuery
 				
 				# reset counter and values to insert ------------------------------------
 				counter = 0 
-				insert_values = []
+				main_insert_values = []
+				connect_insert_values = []
+
 
 			except mdb.Error, e:
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
 
+	sys.exit
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
-		print "# Query: %s\n# Values: %s" % (insertQuery,insert_values)		
+		print "# Query: %s\n# Values: %s" % (main_insertQuery,main_insert_values[0])		
+		print "# Query: %s\n# Values: %s" % (connect_insertQuery,connect_insert_values[0])		
 
 	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
 
@@ -410,13 +492,15 @@ def load_tab_files(name, nrtab, valueLine, main_insertQuery, connect_insertQuery
 def go (org_name,filepath, action, dbname):	
 	name = "GO"
 	nrtab = 5
-	valueLine = ["org_id", "protein_id", "go_term_id", "go_name", "go_termtype", "go_acc"]
+	
+	line_values 	= ["protein_id", "go_term_id", "go_name", "go_termtype", "go_acc"]
+	main_values 	= ["go_term_id", "go_name", "go_termtype", "go_acc"]
+	connect_values 	= ["org_id", "protein_id", "go_term_id"]
 
-	main_insertQuery = "REPLACE INTO go (go_term_id, go_name, go_termtype, go_acc) values(%s,%s,%s,%s);"
-	connect_insertQuery = "REPLACE INTO protein_has_go (org_id, protein_id, go_term_id ) values(%s,%s,%s);"
+	main_insertQuery 	= "REPLACE INTO go (go_term_id, go_name, go_termtype, go_acc) values(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "REPLACE INTO protein_has_go (org_id, protein_id, go_term_id ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
 
-	org_id = load_tab_files(name, nrtab, valueLine, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
-	#load_tab_files(name, nrtab, valueLine, insertQuery2, org_name,filepath, action, dbname)
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 
 	return org_id
 
@@ -457,10 +541,17 @@ def test__sigp():
 def ipr (org_name,filepath, action, dbname):	
 	name = "InterPro"
 	nrtab = 10
-	valueLine = ["protein_id", "ipr_id", "ipr_desc", "domaindb", "domain_id", "domaindesc", "numHits", "domainStarts", "domainEnds", "score"]
-	valueSortLine = ("protein_id", "ipr_id", "ipr_desc", "domaindb", "domain_id", "domaindesc", "numHits", "domainStarts", "domainEnds", "score", "org_id", "protein_id", "org_id")
-	insertQuery = "REPLACE INTO ipr (ipr_protein_id, ipr_id, ipr_desc, ipr_domaindb, ipr_domain_id, ipr_domaindesc, ipr_numHits, ipr_domain_starts, ipr_domain_ends, ipr_score, org_id, ipr_prot_seq_name) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,(SELECT prot_seq_name from proteins WHERE prot_protein_id =%s and org_id = %s));"
-	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+
+	line_values 	= ["protein_id", "ipr_id", "desc", "domaindb", "domain_id", "domaindesc", "numHits", "domain_starts", "domain_ends", "score"]
+	main_values 	= ["ipr_id", "desc", "domaindb", "domain_id", "domaindesc"]
+	connect_values 	= ["org_id", "protein_id", "ipr_id", "domain_starts", "domain_ends", "score"]
+	
+	main_insertQuery 	= "REPLACE INTO ipr (ipr_id, ipr_desc, ipr_domaindb, ipr_domain_id, ipr_domaindesc) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "REPLACE INTO protein_has_ipr (org_id, protein_id, ipr_id, ipr_domain_start, ipr_domain_end, ipr_score ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
+
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
+
 def test__ipr():
 	"""
 	org_id = ipr 	(org_name, path, action, dbname)
@@ -470,12 +561,22 @@ def test__ipr():
 # KEGG
 #######################################################################
 def kegg (org_name,filepath, action, dbname):	
+	#proteinId	ecNum	definition	catalyticActivity	cofactors	associatedDiseases	pathway	pathway_class	pathway_type
+	# the combination of ecNum and pathway is unique
 	name = "KEGG"
 	nrtab = 9
-	valueLine = ["protein_id", "ecNum", "definition", "catalyticActivity", "cofactors", "associatedDiseases", "pathway", "pathway_class", "pathway_type"]
-	valueSortLine = ("protein_id", "ecNum", "definition", "catalyticActivity", "cofactors", "associatedDiseases", "pathway", "pathway_class", "pathway_type", "org_id", "protein_id", "org_id")
-	insertQuery = "REPLACE INTO kegg (kegg_protein_id, kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type, org_id, kegg_prot_seq_name) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s , (SELECT prot_seq_name from proteins WHERE prot_protein_id =%s and org_id = %s));"
-	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+
+	line_values 	= ["protein_id", "ecNum", "definition", "catalyticActivity", "cofactors", "associatedDiseases", "pathway", "pathway_class", "pathway_type"]
+	main_values 	= ["ecNum", "definition", "catalyticActivity", "cofactors", "associatedDiseases", "pathway", "pathway_class", "pathway_type"]
+	connect_values 	= ["org_id", "protein_id", "ecNum", "pathway","ecNum", "pathway"]
+
+
+	main_insertQuery = "REPLACE INTO kegg (kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "REPLACE INTO protein_has_kegg (org_id, protein_id, kegg_ecNum, kegg_pathway, kegg_id ) values(%s,%s,%s,%s, (SELECT kegg_id from kegg where kegg_ecNum=%s and kegg_pathway=%s));"
+
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
+
 def test__kegg():
 	"""
 	org_id = kegg 	(org_name, path, action, dbname)
