@@ -52,6 +52,7 @@ def gzip_fasta_file (filepath):
 # Does not return any values but errors if somthing is wrong
 #######################################################################
 def source_exists(stype, source):
+	allfiles = []
 	if stype == "file":
 		if os.path.isfile(source):
 			print "# INFO: file exists: %s" % source 

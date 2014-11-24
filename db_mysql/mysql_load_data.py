@@ -144,13 +144,14 @@ org_id = ""
 # Define organism key/name
 if args.orgkey:
 	org_name = args.orgkey
+	print "# INFO: organism key/name was determined from argument: ", org_name
 elif re.search("\[(.+)\]", str(args.source)):
 	org_name = (re.search("\[(.+)\]", str(args.source))).group(1)
+	print "# INFO: organism key/name was determined from path: ", org_name
 else:
 	parser.print_help()
 	sys.exit("# ERROR: organism key was not defined and could not be determined from path")
 
-print "# INFO: organism key/name was determined from path: ", org_name
 
 # Load entire JGI directory structure
 if filetype == "dir":

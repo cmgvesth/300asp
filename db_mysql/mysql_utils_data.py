@@ -21,9 +21,10 @@ def get_org_id(org_name, dbname, test):
 	# test of connection has to be performed prior ------------------------------------
 	db = mdb.connect("localhost","asp","1234",dbname) 
 	cursor = db.cursor()
+	result = []
 
-	cursor.execute("SELECT org_id from organism where name LIKE \'" + org_name + "%\';")
-	# first element of tuple ------------------------------------
+	# the limit at the event ensures that only one row is selected
+	cursor.execute("SELECT org_id from organism where name LIKE \'" + org_name + "%\' limit 1;")
 	result = cursor.fetchone() 
 	org_id = result[0]
 
@@ -31,6 +32,7 @@ def get_org_id(org_name, dbname, test):
 		try:
 			cursor.execute("REPLACE INTO organism(name) VALUES(\'" + org_name + "\');")
 			db.commit()
+			# this function always returns one single value
 			result = cursor.lastrowid
 			org_id = result[0]
 
@@ -158,6 +160,7 @@ def load_fasta_files(filetype, valueSortLine, insertQuery, org_name,filepath, ac
 	# Init data structures ------------------------------------
 	insert_values = []
 	valuedict = {}
+	example_values = []
 
 	# Unzip file and store in list ------------------------------------
 	records = gzip_fasta_file(filepath) 
@@ -199,10 +202,11 @@ def load_fasta_files(filetype, valueSortLine, insertQuery, org_name,filepath, ac
 			
 		# Create sets of lists of values ------------------------------------
 		insert_values.append(values) 
+		example_values = [ str(k)[:10] for k in values ]
 		
 		# MySQL will only allow a certain data insert size ------------------------------------
-		if filetype == "ma" : counter_threshold = 2 
 		counter_threshold = 1000
+		if filetype == "ma" : counter_threshold = 2 
 		
 		if action == "load" and ( counter == counter_threshold or totalcounter == len(records)):
 			if totalcounter % 3000 == 0  or totalcounter == len(records) : print "# INFO: Inserting record number %s" % totalcounter
@@ -232,9 +236,9 @@ def load_fasta_files(filetype, valueSortLine, insertQuery, org_name,filepath, ac
 
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
-		print "# Query: %s\n# Values: %s" % (insertQuery,insert_values[0])		
+		print "# Query: %s\n# Values (substrings): %s" % (insertQuery, str(example_values))
 
-	return (org_id, str(insert_values[0]))
+	return (org_id, str(example_values))
 
 ##############################################################################################################################################
 ##############################################################################################################################################
@@ -254,6 +258,37 @@ def parse_generic_annotation_line(line):
 	if len(annotations) < 1:
 		sys.exit("# ERROR: annotation line is empty, %s" % line)	
 	return annotations
+
+#######################################################################
+# Parse GFF annotation lines
+#######################################################################
+def parse_gff_annotation_line(line):
+	annotations = []
+	(trans_id, exon_id, prot_id) = ("NULL","NULL","NULL")
+	# pattern for KEGG files
+	line = line.replace("\"", "")
+	annotations = line.split("\t")
+
+	if len(annotations) < 1:
+		sys.exit("# ERROR: annotation line is empty, %s" % line)	
+
+	k = annotations[-1]
+	if re.search("proteinId", k):
+		prot_id = (k.split(";")[1]).split(" ")[-1]
+		exon_id = (k.split(";")[2]).split(" ")[-1]
+		annotations.append(prot_id)
+
+	elif re.search("transcriptId", k):
+		trans_id = (k.split(";")[1]).split(" ")[-1]
+		annotations.append(trans_id)
+	else:	
+		annotations.append(trans_id)
+
+	annotations.append(exon_id)	
+	annotations.append((k.split(";")[0]).split(" ")[-1])
+
+	return annotations
+
 
 """
 def parse_GO_annotation_line(line):
@@ -335,6 +370,7 @@ def parse_IPR_annotation_line(line):
 	annotations = []
 	tab_fields = line.split("\t")
 	tab_fields = [t.rstrip(",") for t in tab_fields]
+	tab_fields = [t.replace(";", "") for t in tab_fields]
 
 	# If the domain count fieled is more than 1, process line accordingly
 	if int(tab_fields[6]) > 1:
@@ -351,6 +387,7 @@ def parse_IPR_annotation_line(line):
 	# Add value line as annotation		
 	else:
 		annotations.append( tuple(tab_fields[0:]) )
+	#annotations = [ k.replace(";", "") for k in annotations]	
 	return annotations
 			
 #######################################################################
@@ -384,7 +421,7 @@ def parse_GO_annotation_line(line):
 #######################################################################
 def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname):
 	# Init counters ------------------------------------
-	(totalcounter, counter) = (0,0)
+	(totalcounter, counter, print_flag) = (0,0,0)
 
 	# Init data structures ------------------------------------
 	main_insert_values = []
@@ -406,6 +443,7 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 	if action == "test": 
 		org_id = get_org_id(org_name, dbname, 1) 
 		print "# INFO: number of annotation records %s for organism id %s" % (len(records), org_id)
+		print "# INFO: example line: %s" % str(records[3])
 	else: org_id = get_org_id(org_name, dbname, 0) 
 
 
@@ -413,12 +451,14 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 		counter += 1
 		totalcounter += 1
 		valuedict["org_id"] = (org_id,)
+
 		# Function to deal with multi value tab fields (protein_id 	valueA | valueB)
 		if 		name == "GO": 		annotations = parse_GO_annotation_line(r)
 		elif 	name == "InterPro": annotations = parse_IPR_annotation_line(r)
+		elif 	name == "GFF":
+			if r.split("\t")[2] == "exon": continue 		
+			annotations = parse_gff_annotation_line(r)
 		else: 						annotations = parse_generic_annotation_line(r)
-
-		#print annotations
 
 		if name == "GO" or name == "InterPro":
 			for annotation in annotations:
@@ -427,8 +467,6 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 		else:			
 			for key in line_values:
 				valuedict[key] = (annotations[line_values.index(key)],) 
-
-		#print annotations
 
 		# Main annotation table - not organism specific, no org or protein information	
 		# Clear the values list and sort valuedict by the given value line
@@ -446,18 +484,21 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 			values += value	
 		connect_insert_values.append(values)
 
-
 		if action == "load" and ( counter == 1000 or totalcounter == len(records)):
 			# Print insert information  ------------------------------------
-			if totalcounter % 10000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
-			elif totalcounter % 2000 == 0: print "# INFO: Inserting record number %s" % totalcounter
+			if totalcounter % 10000 == 0 and print_flag == 1: 
+				print "# INFO: Inserting record number %s" % totalcounter
+			elif totalcounter % 2000 == 0 and print_flag == 0: 
+				print_flag = 1
+				print "# INFO: Inserting record number %s" % totalcounter
 			elif totalcounter == len(records): print "# INFO: Inserting record number %s" % totalcounter
 						
 			try:	
 				db = mdb.connect("localhost","asp","1234",dbname)
 				cursor = db.cursor()
 				cursor.executemany(main_insertQuery,	main_insert_values)
-				cursor.executemany(connect_insertQuery,	connect_insert_values)
+				if name != "GFF":
+					cursor.executemany(connect_insertQuery,	connect_insert_values)
 
 				# add the changes to the db, close the db connection 
 				db.commit() 
@@ -470,14 +511,23 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 
 
 			except mdb.Error, e:
+				print "# ERROR: %s" % str(main_insert_values[0])
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
-
-	sys.exit
+			"""	
+			if name == "GFF":
+				try: 
+					db = mdb.connect("localhost","asp","1234",dbname)
+					cursor = db.cursor()
+					cursor.execute("UPDATE gff SET gff_exonnr = (SELECT gff_exonnr FROM gff WHERE ) and gff_seq_id = %s ")
+				except mdb.Error, e:
+					sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
+			"""		
+	#sys.exit
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
 		print "# Query: %s\n# Values: %s" % (main_insertQuery,main_insert_values[0])		
 		print "# Query: %s\n# Values: %s" % (connect_insertQuery,connect_insert_values[0])		
-
+		#print annotations
 	print "# FINISHED %s file: %s with total number of records %s" % (name,filename, totalcounter)
 
 	if not (isinstance( org_id, long ) or  isinstance( org_id, int )):
@@ -525,10 +575,16 @@ def test__go():
 def sigp (org_name,filepath, action, dbname):	
 	name = "SignalP"
 	nrtab = 5
-	valueLine = ["protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
-	valueSortLine = ("protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability", "org_id", "protein_id", "org_id")
-	insertQuery = "REPLACE INTO sigp (sigp_protein_id, sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability, org_id, sigp_prot_seq_name) VALUES(%s,%s,%s,%s,%s,%s,(SELECT prot_seq_name from proteins WHERE prot_protein_id =%s and org_id = %s));"
-	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+
+	line_values 	= ["protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
+	main_values 	= ["nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
+	connect_values 	= ["org_id", "protein_id", "nn_cutpos"]
+	
+	main_insertQuery 	= "REPLACE INTO sigp (sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "REPLACE INTO protein_has_sigp (org_id, protein_id, sigp_nn_cutpos) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
+
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
 
 def test__sigp():
 	"""
@@ -588,10 +644,16 @@ def test__kegg():
 def kog (org_name,filepath, action, dbname):	
 	name = "KOG"
 	nrtab = 6
-	valueLine = ["transcript_id", "protein_id", "kog_id", "kogdefline", "e", "b"]
-	valueSortLine = ("transcript_id", "protein_id", "kog_id", "kogdefline", "org_id", "protein_id", "org_id")
-	insertQuery = "REPLACE INTO kog (kog_transcript_id, kog_protein_id, kog_id, kog_defline, org_id, kog_prot_seq_name) values (%s,%s,%s,%s, %s , (SELECT prot_seq_name from proteins WHERE prot_protein_id =%s and org_id = %s));"
-	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+
+	line_values 	= ["transcript_id", "protein_id", "kog_id", "kogdefline", "class", "group"]
+	main_values 	= ["kog_id", "kogdefline", "class", "group"]
+	connect_values 	= ["org_id", "protein_id", "kog_id"]
+
+	main_insertQuery = "REPLACE INTO kog (kog_id, kog_defline, kog_Class, kog_Group) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "REPLACE INTO protein_has_kog (org_id, protein_id, kog_id) VALUES(%s);" % ("%s," * len(connect_values)).rstrip(",")
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
+
 def test__kog():
 	"""
 	org_id = kog 	(org_name, path, action, dbname)
@@ -603,10 +665,21 @@ def test__kog():
 def gff (org_name,filepath, action, dbname):	
 	name = "GFF"
 	nrtab = 9
-	valueLine = ["gff_seqorigin", "a","gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes"]
-	valueSortLine = ("gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes","org_id", "gff_name","gff_protein_id","gff_transcript_id")
-	insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_name,gff_protein_id,gff_transcript_id) values (%s,%s,%s,%s, %s,%s,%s,%s,%s,%s,%s,%s);"
-	return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+	#valueLine = []
+	#valueSortLine = ("gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes","org_id", "gff_name","gff_protein_id","gff_transcript_id")
+	#insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_name,gff_protein_id,gff_transcript_id) values (%s,%s,%s,%s, %s,%s,%s,%s,%s,%s,%s,%s);"
+	#return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
+
+	line_values 	= ["gff_seqorigin", "a","gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "gff_seq_id", "gff_exonnr", "gff_name"]
+	main_values 	= ["gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "org_id", "gff_seq_id" ,"gff_exonnr","gff_name"]
+	connect_values 	= []
+
+	main_insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_seq_id, gff_exonnr, gff_name) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "SELECT gff_seqorigin from gff limit 1"
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
+
+
 def test__gff():
 	"""
 	org_id = gff 	(org_name, path, action, dbname)
