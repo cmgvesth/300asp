@@ -22,11 +22,13 @@ def get_org_id(org_name, dbname, test):
 	db = mdb.connect("localhost","asp","1234",dbname) 
 	cursor = db.cursor()
 	result = []
+	org_id = ""
 
 	# the limit at the event ensures that only one row is selected
 	cursor.execute("SELECT org_id from organism where name LIKE \'" + org_name + "%\' limit 1;")
 	result = cursor.fetchone() 
-	org_id = result[0]
+	if result:
+		org_id = result[0]
 
 	if not org_id:
 		try:
@@ -34,7 +36,8 @@ def get_org_id(org_name, dbname, test):
 			db.commit()
 			# this function always returns one single value
 			result = cursor.lastrowid
-			org_id = result[0]
+			if result:
+				org_id = result
 
 		except mdb.Error, e:
 			sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
@@ -569,27 +572,6 @@ def test__go():
 	action = "test"
 	org_id = go (org_name, path, action, dbname)
 
-#######################################################################
-# SignalP
-#######################################################################
-def sigp (org_name,filepath, action, dbname):	
-	name = "SignalP"
-	nrtab = 5
-
-	line_values 	= ["protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
-	main_values 	= ["nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
-	connect_values 	= ["org_id", "protein_id", "nn_cutpos"]
-	
-	main_insertQuery 	= "REPLACE INTO sigp (sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
-	connect_insertQuery = "REPLACE INTO protein_has_sigp (org_id, protein_id, sigp_nn_cutpos) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
-
-	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
-	return org_id
-
-def test__sigp():
-	"""
-	org_id = sigp 	(org_name, path, action, dbname)
-	"""
 
 #######################################################################
 # InterPro
@@ -657,6 +639,28 @@ def kog (org_name,filepath, action, dbname):
 def test__kog():
 	"""
 	org_id = kog 	(org_name, path, action, dbname)
+	"""
+
+#######################################################################
+# SignalP
+#######################################################################
+def sigp (org_name,filepath, action, dbname):	
+	name = "SignalP"
+	nrtab = 5
+
+	line_values 	= ["protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
+	main_values 	= ["org_id", "protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
+	connect_values 	= []
+	
+	main_insertQuery 	= "REPLACE INTO sigp (org_id, protein_id, sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "SELECT sigp_nn_cutpos from sigp limit 1"
+
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	return org_id
+
+def test__sigp():
+	"""
+	org_id = sigp 	(org_name, path, action, dbname)
 	"""
 
 #######################################################################

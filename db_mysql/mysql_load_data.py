@@ -14,27 +14,6 @@ from mysql_utils_data import * # custom functions
 from utilsArgparse import * # custom functions
 from datetime import datetime
 
-
-##############################################################################################################################################
-##############################################################################################################################################
-####################################################################### TEST ############################################################
-##############################################################################################################################################
-##############################################################################################################################################
-# Test annotation functions
-# Create temporary GFF TAB file
-# Create temporary KOG TAB file
-# Create temporary SignalP TAB file
-# Create temporary GO TAB file
-# Create temporary KEGG TAB file
-# Create temporary Interpro TAB file
-"""
-org_id = gff 	(org_name, path, action, dbname)
-org_id = kog 	(org_name, path, action, dbname)
-org_id = sigp 	(org_name, path, action, dbname)
-org_id = go 	(org_name, path, action, dbname)
-org_id = kegg 	(org_name, path, action, dbname)
-org_id = ipr 	(org_name, path, action, dbname)
-"""
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### ARGUMENTS ############################################################
@@ -123,10 +102,36 @@ if args.verbose:
 #------------------------------------------------------------------
 try:
     db = mdb.connect("localhost","asp","1234",str(args.dbname))
+    print "# INFO: success connectiong to existing database %s" % args.dbname
 
 except mdb.Error, e:
-    sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+	print "# INFO: creating new database %s" % args.dbname
+	print "# INFO: loading BLAST table will take hours!"
+	try:
+		db = mdb.connect("localhost","root","1234")
+		cursor = db.cursor()
+		sql = 'CREATE DATABASE %s' % str(args.dbname)
+		cursor.execute(sql)	
+	except mdb.Error, e:
+		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
+	try:
+		db = mdb.connect("localhost","asp","1234",str(args.dbname))
+	except mdb.Error, e:
+		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+
+	cursor = db.cursor()
+	myfile = open ("/home/tcve/github/db_mysql/aspminedb.sql", "r") 
+	data = ''.join( [line.replace('\n', '') for line in myfile.readlines()] )
+	data = data.split(";")
+
+	cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+	for d in data:
+		cursor.execute(d)
+		db.commit()
+	cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+	db.commit()
+#sys.exit()
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### Main #################################################################
@@ -137,7 +142,7 @@ filetype = args.filetype
 action = args.action
 dbname = args.dbname
 
-allfiles = []
+
 org_name = ""
 org_id = ""
 
