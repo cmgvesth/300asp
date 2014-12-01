@@ -1,7 +1,5 @@
 from Bio import  SeqIO
 from Bio.Seq import Seq
-import os
-import matplotlib.pyplot as plt
 
 assembly_file  = ""
 gff_file = ""
