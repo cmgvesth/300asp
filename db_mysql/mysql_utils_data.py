@@ -516,16 +516,7 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 			except mdb.Error, e:
 				print "# ERROR: %s" % str(main_insert_values[0])
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
-			"""	
-			if name == "GFF":
-				try: 
-					db = mdb.connect("localhost","asp","1234",dbname)
-					cursor = db.cursor()
-					cursor.execute("UPDATE gff SET gff_exonnr = (SELECT gff_exonnr FROM gff WHERE ) and gff_seq_id = %s ")
-				except mdb.Error, e:
-					sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
-			"""		
-	#sys.exit
+				
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
 		print "# Query: %s\n# Values: %s" % (main_insertQuery,main_insert_values[0])		

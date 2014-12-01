@@ -125,11 +125,11 @@ except mdb.Error, e:
 	data = ''.join( [line.replace('\n', '') for line in myfile.readlines()] )
 	data = data.split(";")
 
-	cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-	for d in data:
-		cursor.execute(d)
-		db.commit()
-	cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+	#cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+	#for d in data:
+	#	cursor.execute(d)
+	#	db.commit()
+	#cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 	db.commit()
 #sys.exit()
 ##############################################################################################################################################

@@ -118,7 +118,8 @@ for i in tmp_records:
 (upper_flag, lower_flag) = (0,0)
 
 for r in records:
-	if r.count("") == 17 or r.count("") == 16:
+	#if r.count("") == 17 or r.count("") == 16:
+	if 
 		if upper_flag == 0:
 			upper_level = r[1]
 			upper_flag = 1

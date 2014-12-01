@@ -47,18 +47,14 @@ class SmartFormatter( argparse.HelpFormatter ):
 #------------------------------------------------------------------
 parser = argparse.ArgumentParser( formatter_class=SmartFormatter, 
 								 usage='%(prog)s -action connect\n'
-								 "Example: python %(prog)s -dbname aspminedb -action connect\n" )
+								 "Example: python %(prog)s -dbname aspminedb -source organismnames.txt\n" )
 
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
 #------------------------------------------------------------------
-parser.add_argument( '-action' , required=False, default = "test", choices=['load', 'test'],
-					help='R|Test or test and load data\n'
-					"-test\t: Read and verify connections between sequence names in blast table and organisms in organism table\n"
-					"-load\t: Read sequence names in MySQL blast table and connect to organisms, Stores connections in blast2org table\n" )
 
-parser.add_argument( "-source",		required=True,	help="R|File or directoryname, example: -source AacidusVsAindologenusTable.txt" )
-parser.add_argument( "-dbname", required=False, help="R|Database name", default = "aspminedb" )
+parser.add_argument( "-source",		required=True,	help="R|File name, example: -source organismnames.txt" )
+parser.add_argument( "-dbname",		required=False, help="R|Database name", default = "aspminedb" )
 
 args = parser.parse_args()
 
@@ -66,7 +62,7 @@ args = parser.parse_args()
 # Print argument values to screen
 #------------------------------------------------------------------
 print "#--------------------------------------------------------------"
-print "# ARGUMENTS :\n# action\t:%s\n# source\t:%s\n# database\t:%s" % ( args.action,args.source,args.dbname )
+print "# ARGUMENTS :\n# source\t:%s\n# database\t:%s" % ( args.source,args.dbname )
 print "#--------------------------------------------------------------"
 
 #------------------------------------------------------------------
