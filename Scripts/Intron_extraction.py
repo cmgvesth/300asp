@@ -125,7 +125,6 @@ def quality_check(gene, contigs, official_genes):
                 n = n + element[0]
             if n == len(official_genes[gene.name]):
                 print("Length does not match for "+gene.name)
-                print()
             return False
     else:
         return False
@@ -148,7 +147,6 @@ for entry in genes:
         for i, intron in enumerate(gene_entry.get_sequences(contigs,introns=1)):
             intron_list.append((gene_entry.name+'_'+str(i+1), intron))
     else:
-        print()
         print(entry+' is not matching!')
 
 
