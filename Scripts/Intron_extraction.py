@@ -52,7 +52,7 @@ class gene:
             for intron in intron_positions:
                 # Get DNA sequence of the introns. Note: Positions are shifted by one, because of the zero-based numbering in python,
                 # as opposed to numbering starting from 1 in the gff-files! For the end position the shift cancels out the necessary 
-                #increment of 1 due to the non-inclusiveness of the end-position in string slices
+                # increment of 1 due to the non-inclusiveness of the end-position in string slices
                 sequences.append(contig_sequence[intron[0]-1:intron[1]])
         else:
             for cds in sorted(self.cds, key=lambda x: x[0]):
