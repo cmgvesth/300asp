@@ -10,8 +10,6 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-#from mysql_classes import Blast	# custom class
-import pprint
 """
 CODEBOOK INFO:
 

@@ -5,14 +5,16 @@
 #------------------------------------------------------------------
 import MySQLdb as mdb
 import sys, getopt, argparse, re, glob, os, gzip
+from datetime import datetime
 
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
+
+sys.path.append('/home/tcve/github/utils/')
 from mysql_utils_data import * # custom functions
 from utilsArgparse import * # custom functions
-from datetime import datetime
 
 ##############################################################################################################################################
 ##############################################################################################################################################
@@ -125,11 +127,11 @@ except mdb.Error, e:
 	data = ''.join( [line.replace('\n', '') for line in myfile.readlines()] )
 	data = data.split(";")
 
-	#cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-	#for d in data:
-	#	cursor.execute(d)
-	#	db.commit()
-	#cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+	cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+	for d in data:
+		cursor.execute(d)
+		db.commit()
+	cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 	db.commit()
 #sys.exit()
 ##############################################################################################################################################

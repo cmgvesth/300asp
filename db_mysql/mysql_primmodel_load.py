@@ -10,9 +10,11 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
+from datetime import datetime
+
+sys.path.append('/home/tcve/github/utils/')
 from mysql_utils_data import * # custom functions
 from utilsArgparse import * # custom functions
-from datetime import datetime
 
 ##############################################################################################################################################
 ##############################################################################################################################################

@@ -4,12 +4,14 @@
 # Imports
 #------------------------------------------------------------------
 import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os
-import gzip
+import sys, getopt, argparse, re, glob, os, gzip
+
 from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
+
+sys.path.append('/home/tcve/github/utils/')
 from utilsDataFormats import *
 from utilsFileOperations import *
 
@@ -516,7 +518,7 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 			except mdb.Error, e:
 				print "# ERROR: %s" % str(main_insert_values[0])
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
-				
+
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
 		print "# Query: %s\n# Values: %s" % (main_insertQuery,main_insert_values[0])		

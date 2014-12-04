@@ -10,8 +10,6 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-#from mysql_classes import Blast	# custom class
-import pprint
 """
 CODEBOOK INFO:
 
@@ -24,9 +22,9 @@ blastp
 
 
 
-for x in A*/*txt
+for x in Az*/*txt
 do
-python /home/tcve/Dropbox/aspmine/mysql_blast_load.py -filetype blast -action load -source $x
+python /home/tcve/github/db_mysql/mysql_blast_load.py -filetype blast -action load -source $x
 done
 
 
@@ -175,7 +173,7 @@ for line in file_lines:
 	values_to_insert.append( values ) # Create sets of lists of values
 
 	# Only load data if action is specified
-	if args.action == "load" and ( counter == 100 or totalcounter == len( file_lines ) ):
+	if args.action == "load" and ( counter == 500 or totalcounter == len( file_lines ) ):
 		if totalcounter % 1000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
 		elif totalcounter == len(file_lines): print "# INFO: Inserting record number %s" % totalcounter
 

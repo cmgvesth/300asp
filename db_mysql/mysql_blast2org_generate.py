@@ -10,7 +10,6 @@ from Bio import SeqIO
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-import pprint
 """
 CODEBOOK INFO:
 
