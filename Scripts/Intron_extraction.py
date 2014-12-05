@@ -42,7 +42,7 @@ class gene:
         return str(Seq(seq_string).reverse_complement())
             
     def get_sequences(self, contigs, introns=0):
-        """ Return the sequences of either introns or exons.
+        """ Return the sequences of either introns or CDS.
             If not specified CDS are returned.
         """
         sequences = []
