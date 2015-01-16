@@ -1,12 +1,8 @@
 from Bio import  SeqIO
 from Bio.Seq import Seq
-
-assembly_file  = ""
-gff_file = ""
-gene_catalog = ""
-output_file = ""
-
-
+import sys, argparse
+from Bio.SeqRecord import SeqRecord
+from Bio.Alphabet.IUPAC import IUPACAmbiguousDNA
 
 #===============================================================================
 # Gene class collecting the information in the gff file
@@ -64,14 +60,6 @@ class gene:
         else:
             return sequences
             
-        
-        
-            
-
-#===============================================================================
-# Function definitions
-#===============================================================================
-
 def parse_gff(ggf_file):
     """ Input: name of a gff-file
     Output: Dictionary of gene objects from the information provided in the file.
@@ -109,61 +97,30 @@ def read_fasta(fasta_file):
         result[name]=str(entry.seq).upper()
     return result
 
-def quality_check(gene, contigs, official_genes):
-    """ Input: Gene object, dictionary of super contig sequences and a
-    dictionary containing the official gene predictions (without introns)
-    Output: True if gene is contained in official gene list and 
-    the reconstructed gene sequence matches the official one. False otherwise.
-    """
-    n = 0
-    if gene.name in official_genes:
-        if "".join(gene.get_sequences(contigs)) == official_genes[gene.name]:
-            return True
-        else:
-            print("".join(gene.get_sequences(contigs)), official_genes[gene.name])
-            for element in gene.cds:
-                n = n + element[0]
-            if n == len(official_genes[gene.name]):
-                print("Length does not match for "+gene.name)
-            return False
-    else:
-        return False
 
-
-#===============================================================================
-# Load files
-#===============================================================================
-
-genes = parse_gff(gff_file)
-contigs = read_fasta(assembly_file)
-official_genes = read_fasta(gene_catalog)
-
-intron_list = []
-
-
-for entry in genes:
-    gene_entry = genes[entry]
-    if quality_check(gene_entry, contigs, official_genes):
+def main(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gff', '-g', required=True)
+    parser.add_argument('--contigs', '-c', required=True)
+    parser.add_argument('--output', '-o', required=True)
+    args = parser.parse_args()
+    output_file = args.output
+    assembly_file = args.contigs
+    gff_file = args.gff
+      
+    # Read files
+    genes = parse_gff(gff_file)
+    contigs = read_fasta(assembly_file)
+    # Get introns
+    intron_list = []
+    for entry in sorted(genes.keys()):
+        gene_entry = genes[entry]
         for i, intron in enumerate(gene_entry.get_sequences(contigs,introns=1)):
-            intron_list.append((gene_entry.name+'_'+str(i+1), intron))
-    else:
-        print(entry+' is not matching!')
+            intron_list.append(SeqRecord(Seq(intron, IUPACAmbiguousDNA), id=entry+'.'+str(i+1), description=""))
+              
+    n = SeqIO.write(intron_list, output_file, "fasta")
+    print("{0} introns printed in {1}".format(str(n), output_file))
 
 
-#===============================================================================
-# Print result file
-#===============================================================================
-
-with open(output_file,'w') as result_file:
-    for element in sorted(intron_list):
-        # Write the output file in a fasta compliant way
-        # Write identifier
-        result_file.write('>'+element[0]+'\n')
-        # Write Sequence with 80 characters per line
-        result_file.write('\n'.join(element[1][j:j+80] for j in range(0,len(element[1]), 80)))
-        result_file.write('\n')
-
-#===============================================================================
-# End of execution
-#===============================================================================
-print("Done.")
+if __name__ == "__main__":
+    main(sys.argv[1:])
