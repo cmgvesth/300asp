@@ -269,7 +269,7 @@ def parse_generic_annotation_line(line):
 #######################################################################
 def parse_gff_annotation_line(line):
 	annotations = []
-	(trans_id, exon_id, prot_id) = ("NULL","NULL","NULL")
+	(seq_id, exon_id) = ("NULL","NULL")
 	# pattern for KEGG files
 	line = line.replace("\"", "")
 	annotations = line.split("\t")
@@ -279,94 +279,19 @@ def parse_gff_annotation_line(line):
 
 	k = annotations[-1]
 	if re.search("proteinId", k):
-		prot_id = (k.split(";")[1]).split(" ")[-1]
+		seq_id = (k.split(";")[1]).split(" ")[-1]
 		exon_id = (k.split(";")[2]).split(" ")[-1]
-		annotations.append(prot_id)
 
-	elif re.search("transcriptId", k):
-		trans_id = (k.split(";")[1]).split(" ")[-1]
-		annotations.append(trans_id)
-	else:	
-		annotations.append(trans_id)
+	if re.search("transcriptId", k):
+		seq_id = (k.split(";")[1]).split(" ")[-1]
 
+	annotations.append(seq_id)
 	annotations.append(exon_id)	
 	annotations.append((k.split(";")[0]).split(" ")[-1])
-
+	#print annotations
 	return annotations
 
 
-"""
-def parse_GO_annotation_line(line):
-######################################################################
-# Parse GO annotation lines
-#######################################################################
-	segments = line.replace("\t", " ").split(" ")
-	
-	# Pull the ID value from the first segment
-	protein_id = str(segments[0])	
-	
-	# Init data structures  ------------------------------------
-	id_list = []
-	term_list = []
-	type_list = []
-	acc_list = []
-  	protein_list = []
-
-	# Init indexes  ------------------------------------
-	i = 1
-	j = len(segments) - 1
-
-	# Read IDs Note: i put i<j here to force this to terminate at some point   ------------------------------------
-	# Move 'i' forward because of break
-	while(i<j): 
-		if(segments[i] != "|"):
-			id_list.append(str(segments[i]))
-			if(segments[i+1] != "|"):
-				break
-		i += 1
-	i += 1	
-
-	# Read GO accession numbers  ------------------------------------
-	# Move 'j' backward because of break
-	while(i<j):
-		if(segments[j] != "|"):
-			acc_list.append(segments[j])
-			if(segments[j-1] != "|"):
-				break
-		j-= 1
-	j -= 1	
-
-	# Read GO types  ------------------------------------
-	# No need to move j at this point
-	while(i<j):	
-		if(segments[j] != "|"):
-			type_list.append(segments[j])
-			protein_list.append(protein_id)
-			if(segments[j-1] != "|"):
-				break
-		j -= 1	
-	
-	# Read go terms  ------------------------------------
-	remaining = " ".join(segments[i:j])
-	term_list = remaining.split(" | ")
-
-	#print term_list
-	# Check Results  ------------------------------------
-	l1 = len(id_list)
-	if(l1 == 0):
-		sys.exit("# ERROR: annotation parser ran into an error parsing the line (is the line is empty?)")
-	if(l1 != len(term_list) or l1 != len(type_list) or l1 != len(acc_list)):
-		sys.exit("# ERROR: annotation parser ran into an error parsing the line, there must be the same number of terms in each line")
-
-	# Build and return result set
-	# valueLine1 = ["goterm_id", "goName", "gotermType", "goAcc"]
-	# valueLine2 = ["protein_id", "goterm_id", "org_id"]
-
-	#return [(protein_id, ann_id, ann_term, ann_type, ann_acc) for (ann_id, ann_term, ann_type, ann_acc) in zip(id_list, term_list, reversed(type_list), reversed(acc_list))]
-	#print zip(protein_list, id_list, term_list, reversed(type_list), reversed(acc_list))
-	return zip(protein_list, id_list, term_list, reversed(type_list), reversed(acc_list))
-
-"""
 
 #######################################################################
 # Parse InterPro annotation lines
@@ -460,19 +385,38 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 		# Function to deal with multi value tab fields (protein_id 	valueA | valueB)
 		if 		name == "GO": 		annotations = parse_GO_annotation_line(r)
 		elif 	name == "InterPro": annotations = parse_IPR_annotation_line(r)
-		elif 	name == "GFF":
-			if r.split("\t")[2] == "exon": continue 		
-			annotations = parse_gff_annotation_line(r)
-		else: 						annotations = parse_generic_annotation_line(r)
+		elif 	name == "GFF":		annotations = parse_gff_annotation_line(r)
+		else:						annotations = parse_generic_annotation_line(r)
 
 		if name == "GO" or name == "InterPro":
 			for annotation in annotations:
 				for key in line_values:
 					valuedict[key] = (annotation[line_values.index(key)],) 
+		elif name == "GFF":
+
+			for key in line_values:
+				#print key, line_values.index(key)
+
+				if re.search("proteinId", annotations[line_values.index(key)]):
+					valuedict["gff_protein_id"] = (annotations[line_values.index(key)+1],)
+					valuedict["gff_trans_id"] = ("NULL",)
+
+				elif re.search("transcriptId", annotations[line_values.index(key)]):
+					valuedict["gff_trans_id"] = (annotations[line_values.index(key)+1],)
+					valuedict["gff_protein_id"] = ("NULL",)
+
+				elif key=="gff_seq_id": 
+					continue	
+
+				valuedict[key] = (annotations[line_values.index(key)],) 
+				#if re.search("transcriptId", line_values["gff_attributes"]): 
+				#	valuedict["gff_trans_id"] = (annotations[line_values["gff_seq_id"]],)
+
 		else:			
 			for key in line_values:
 				valuedict[key] = (annotations[line_values.index(key)],) 
-
+		#print valuedict		
+		#sys.exit()		
 		# Main annotation table - not organism specific, no org or protein information	
 		# Clear the values list and sort valuedict by the given value line
 		# Add each value to a list and add each list to the insert list
@@ -668,10 +612,10 @@ def gff (org_name,filepath, action, dbname):
 	#return load_tab_files(name, nrtab, valueLine, valueSortLine, insertQuery, org_name,filepath, action, dbname)
 
 	line_values 	= ["gff_seqorigin", "a","gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "gff_seq_id", "gff_exonnr", "gff_name"]
-	main_values 	= ["gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "org_id", "gff_seq_id" ,"gff_exonnr","gff_name"]
+	main_values 	= ["gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "org_id", "gff_protein_id", "gff_trans_id" ,"gff_exonnr","gff_name"]
 	connect_values 	= []
 
-	main_insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_seq_id, gff_exonnr, gff_name) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	main_insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_protein_id, gff_trans_id, gff_exonnr, gff_name) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
 	connect_insertQuery = "SELECT gff_seqorigin from gff limit 1"
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 	return org_id

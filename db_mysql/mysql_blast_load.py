@@ -158,15 +158,16 @@ for line in file_lines:
 
 	( qseqid, sseqid, pident, qlen, qstart, qend, slen, sstart, send, evalue, bitscore ) = line.split( "\t" )[0:11]
 	 
-	if len(sseqid.split("|")) >= 4 : 	(sjgi1, sjgi2, sjgi3) = sseqid.split("|")[1:4]
-	elif len(sseqid.split("_")) >= 2:	(sjgi1, sjgi2) = sseqid.split("_")[0:2]
-	else: (sjgi1, sjgi2, sjgi3) = ( sseqid, "","")
+	if len(sseqid.split("|")) >= 4 : 	(sjgi1, sjgi2, sjgi3) 	= sseqid.split("|")[1:4]
+	elif len(sseqid.split("_")) >= 2:	(sjgi1, sjgi2) 			= sseqid.split("_")[0:2]
+	elif re.search("Afu", sseqid) :		(sjgi1, sjgi2) 			= ("sApfu1", sseqid)
+	else: 								(sjgi1, sjgi2, sjgi3) 	= ( sseqid, "","")
 
-	if len(qseqid.split("|")) >= 4 :	(qjgi1, qjgi2, qjgi3) = qseqid.split("|")[1:4]
-	elif len(qseqid.split("_")) >= 2:	(qjgi1, qjgi2) = qseqid.split("_")[0:2]
-	else: (qjgi1, qjgi2, qjgi3) = ( qseqid, "","")
+	if len(qseqid.split("|")) >= 4 :	(qjgi1, qjgi2, qjgi3) 	= qseqid.split("|")[1:4]
+	elif len(qseqid.split("_")) >= 2:	(qjgi1, qjgi2) 			= qseqid.split("_")[0:2]
+	elif re.search("Afu", qseqid) :		(qjgi1, qjgi2) 			= ("Aspfu1", qseqid)
+	else: 								(qjgi1, qjgi2, qjgi3) 	= ( qseqid, "","")
 
-	
 	values = (args.source.split("/")[-1] , qseqid, qjgi1, qjgi2, qjgi3 , sseqid, sjgi1, sjgi2, sjgi3, pident, qlen, qstart, qend, slen, sstart, send, evalue, bitscore )
 	values = [re.sub( r"^0+", "", i ) for i in values]
 	#print values
