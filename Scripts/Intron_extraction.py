@@ -105,19 +105,22 @@ def main(argv):
     parser.add_argument('--output', '-o', required=True)
     args = parser.parse_args()
     output_file = args.output
-    assembly_file = args.contigs
+    supercontig_file = args.contigs
     gff_file = args.gff
       
     # Read files
     genes = parse_gff(gff_file)
-    contigs = read_fasta(assembly_file)
+    contigs = read_fasta(supercontig_file)
+    
     # Get introns
     intron_list = []
     for entry in sorted(genes.keys()):
         gene_entry = genes[entry]
         for i, intron in enumerate(gene_entry.get_sequences(contigs,introns=1)):
+            # Add intron sequences to overall list of introns with the id=<Gene name>.<#intron>
             intron_list.append(SeqRecord(Seq(intron, IUPACAmbiguousDNA), id=entry+'.'+str(i+1), description=""))
-              
+    
+    # Write all introns into output file          
     n = SeqIO.write(intron_list, output_file, "fasta")
     print("{0} introns printed in {1}".format(str(n), output_file))
 
