@@ -20,23 +20,16 @@ boxplot_section <- ggplot(dat, aes(y=len, x=section, fill=section)) + geom_boxpl
 ggtitle("Boxplot, color by section")
 ggsave(file="aalength_boxplotSection.pdf", width=12, height=12)
 
+for (s in unique(dat$section)) {
+	set <- subset(dat, section==s)
 
+	filename = paste("aalength_histogram_section_", s, ".pdf", sep="")
+	title = paste("Histograms, binwidth 100 amino acids, plot per organism, section ", s,  sep="")
+	m <- ggplot(set, aes(x=len, fill=section)) + geom_bar(binwidth=100) + facet_grid(~org_id) + xlim(0,2000) + ggtitle(title) 
+	ggsave(plot = m, file=filename, height=12+length(unique(set$org_id)), width=12)
 
-
-# summary(subset(dat, section=="flavi"))
-# for (i in unique(dat$section)) { 	print(summary(subset(dat, section==i))) }
-for (i in 1:length(levels(dat$section)) ) { 
-	set = dat[dat$section==dat$section[i],]
-	print(i, summary(set$section))
-	filename = paste("aalength_histogram", dat$section[i], ".pdf", sep="")
-	title = paste("Histograms, binwidth 100 amino acids, plot per organism, section ", dat$section[i],  sep="")
-	m <- ggplot(dat, aes(x=len)) + geom_bar(binwidth=100) + facet_grid(section~org_id) + ggtitle(title)
-	ggsave(file=filename, width=12, height=12)
+	filename = paste("aalength_boxplots_section_", s, ".pdf", sep="")
+	title = paste("Boxplot, plot per organism, section ", s,  sep="")
+	m <- ggplot(set, aes(y=len, x=name)) + geom_boxplot() + coord_flip() + ggtitle(title)
+	ggsave(plot = m, file=filename, height=12+length(unique(set$org_id)), width=12)
 }
-
-hist_org <- ggplot(dat, aes(x=len)) + geom_bar(binwidth=100) + facet_grid(section~org_id) +
-ggtitle("Histograms, binwidth 100 amino acids, plot per organism")
-
-dens_bar_org <- ggplot(dat, aes(x=len)) + geom_bar(binwidth=100) + facet_grid(section~org_id) + aes(y = ..density..) +
-ggtitle("Density barplot, binwidth 100 amino acids, plot per section")
-
