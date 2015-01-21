@@ -40,6 +40,8 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 parser.add_argument("-out", "-o", required=False, default = "lengths.tab", help="Name of output file")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-sec", required=False, help="Section name")
+parser.add_argument("-plot", "-p", required=False, help="Create")
+
 #parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')
 
 args = parser.parse_args()
@@ -127,4 +129,11 @@ writer = csv.writer(f, dialect = 'excel')
 writer.writerows(result)
 f.close
 
-os.system("R CMD BATCH aspmine_analysis_lengths.R")
+if args.plot:
+	os.system("R CMD BATCH aspmine_analysis_lengths.R")
+
+
+
+
+
+
