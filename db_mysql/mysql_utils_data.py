@@ -458,7 +458,6 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 				main_insert_values = []
 				connect_insert_values = []
 
-
 			except mdb.Error, e:
 				print "# ERROR: %s" % str(main_insert_values[0])
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
@@ -490,7 +489,8 @@ def go (org_name,filepath, action, dbname):
 	main_insertQuery 	= "REPLACE INTO go (go_term_id, go_name, go_termtype, go_acc) values(%s);" % ("%s," * len(main_values)).rstrip(",")
 	connect_insertQuery = "REPLACE INTO protein_has_go (org_id, protein_id, go_term_id ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
 
-	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
+	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, \
+		main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 
 	return org_id
 

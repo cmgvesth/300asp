@@ -37,100 +37,114 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 								 usage='%(prog)s -out filename\n'
 								 "Example: python %(prog)s -dbname aspminedb -filetype model -action test -source NigerModel2013.csv")
 #parser.add_argument("-limit", "-l", required=False, default = 100, help="limit length selects, dafault 100, to select all set to 'all' ")
-parser.add_argument("-out", "-o", required=False, default = "lengths.tab", help="Name of output file")
+parser.add_argument("-out", "-o", required=False, default = "lengths.csv", help="Name of output file")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-sec", required=False, help="Section name")
-parser.add_argument("-plot", "-p", required=False, help="Create")
+parser.add_argument("-plot", "-p", default = "n", required=False, help="Create plot", choices=['n', 'y'])
+parser.add_argument("-tab", "-t", default = "n", required=False, help="Create table", choices=['n', 'y'])
+parser.add_argument("-R", default="aspmine_analysis_lengths.R", required=False, help="Name of R script, default aspmine_analysis_lengths.R")
 
 #parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')
 
-args = parser.parse_args()
+args 	= parser.parse_args()
 section = args.sec
+plot 	= args.plot
+table 	= args.tab
+rscript = args.R
+outfile = args.out
 
 #------------------------------------------------------------------
 # Print argument values to screen
 #------------------------------------------------------------------
 print "#--------------------------------------------------------------"
-print "# ARGUMENTS :\n# Database\t:%s\n# Outfile\t:%s" % (args.dbname, args.out)
+print "# ARGUMENTS :\n# Database\t:%s\n# Outfile\t:%s \n# Create Plot\t:%s \n# Create Table\t:%s \n# Rscript\t:%s" % (args.dbname, args.out, plot, table, rscript)
 print "#--------------------------------------------------------------"
 
-""" TO DO: 
-make sure that the R script is in the right location and make some simple grep to veryfy what is in it 
-else - exit
-"""
-outfile = open(args.out, 'w') 
+if not os.path.isfile(rscript):
+	sys.exit("# ERROR: Rscript file does not exist, %s" % rscript)
+
+if table=="n": 
+	if not os.path.isfile(outfile):
+		sys.exit("# ERROR: length file does not exist, %s , run with -tab option " % outfile)
+
+#outfile = open(args.out, 'w') 
 
 ##############################################################################################################################################
+##############################################################################################################################################
+####################################################################### FUNCTIONS ############################################################
+##############################################################################################################################################
+##############################################################################################################################################
+
 ##############################################################################################################################################
 ####################################################################### DATABASE  ############################################################
 ##############################################################################################################################################
-##############################################################################################################################################
+def make_table(outfile):
+	print "# INFO: creating length table"
 
-#------------------------------------------------------------------
-# Connect to specific DB
-#------------------------------------------------------------------
+	#------------------------------------------------------------------
+	# Connect to specific DB
+	#------------------------------------------------------------------
+	try:
+	    db = mdb.connect("localhost","asp","1234",str(args.dbname))
+	except mdb.Error, e:
+	    sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-try:
-    db = mdb.connect("localhost","asp","1234",str(args.dbname))
+	try:
+		cursor = db.cursor()
+	except mdb.Error, e: 
+		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-except mdb.Error, e:
-    sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+	#------------------------------------------------------------------
+	# Create table protein lengths
+	#------------------------------------------------------------------
+	try:
+		cursor.execute("drop table IF EXISTS lengths ;")
+		cursor.execute("create table lengths as select org_id, prot_seqname, length(prot_seq) as len from proteins;")
 
-try:
-	cursor = db.cursor()
+	except mdb.Error, e:
+		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-except mdb.Error, e: 
-	sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+	#------------------------------------------------------------------
+	# Get protein lengths
+	# Using panda sql to get data from the database into a R readable format
+	# psql.read_frame
+	#------------------------------------------------------------------
+	result = ""
 
-##############################################################################################################################################
-##############################################################################################################################################
-####################################################################### DATA      ############################################################
-##############################################################################################################################################
-##############################################################################################################################################
+	try: 
+		if section:
+			cursor.execute("SELECT organism.org_id, section, name, real_name, len FROM lengths join organism using (org_id) where section = \'" + section + "\';")
+		else:
+			cursor.execute("SELECT organism.org_id, section, name, real_name, len FROM lengths join organism using (org_id);")
 
-#------------------------------------------------------------------
-# Create table protein lengths
-#------------------------------------------------------------------
-try:
-	cursor.execute("drop table IF EXISTS lengths ;")
-	cursor.execute("create table lengths as select org_id, prot_seqname, length(prot_seq) as len from proteins;")
+	except mdb.Error, e:
+		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-except mdb.Error, e:
-	sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+	result = cursor.fetchall()
 
-#------------------------------------------------------------------
-# Get protein lengths
-# Using panda sql to get data from the database into a R readable format
-# psql.read_frame
-#------------------------------------------------------------------
-result = ""
+	if not type(result) is tuple:
+		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
 
-try: 
-	if section:
-		cursor.execute("SELECT organism.org_id, section, name, real_name, len FROM lengths join organism using (org_id) where section = \'" + section + "\';")
-	else:
-		cursor.execute("SELECT organism.org_id, section, name, real_name, len FROM lengths join organism using (org_id);")
+	f = open(outfile,'wb')
+	writer = csv.writer(f, dialect = 'excel')
+	writer.writerows(result)
+	f.close()
 
-except mdb.Error, e:
-	sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
-
-result = cursor.fetchall()
-
-if not type(result) is tuple:
-	sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
-
-##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### PLOT      ############################################################
 ##############################################################################################################################################
-##############################################################################################################################################
-f = open("tmp.csv",'wb')
-writer = csv.writer(f, dialect = 'excel')
-writer.writerows(result)
-f.close
+def make_plot(outfile):
+	print "# INFO: running Rscript"
+	os.system("R CMD BATCH '--args %s' aspmine_analysis_lengths.R test.out " % outfile)
 
-if args.plot:
-	os.system("R CMD BATCH aspmine_analysis_lengths.R")
+
+if table=="y":
+	make_table(outfile)
+	if plot=="y":
+		make_plot(outfile)
+
+if table=="n" and plot=="y":
+	make_plot(outfile)
 
 
 

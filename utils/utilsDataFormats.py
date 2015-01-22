@@ -57,7 +57,7 @@ def check_seq_dna(seq):
 
 def check_tab_format (wanted_nr_columns, records):
 	if len(records) < 1:
-		sys.exit("# ERROR utils: no records found in file")
+		print "# WARNING:utils: no records found in file"
 		
 	for r in records:	
 

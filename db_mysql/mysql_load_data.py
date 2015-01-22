@@ -34,15 +34,12 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 								 "Example: python %(prog)s -dbname aspminedb -filetype dir -action test -source /home/user/Documents/Aspergillus_flavus_NRRL3357_[Aspfl1]")
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
+# At least one file filetype must be provided, or the option "all" which expects a JGI directory format
 #------------------------------------------------------------------
 parser.add_argument('-action' , "-a", required=True, default = "test", choices=['load', 'test'],
 					help='R|Test or test and load data\n'
 					"-test\t: Read files and verify formats\n"
 					"-load\t: Read files and verify formats followed by storing data in MySQL tables\n")
-
-#------------------------------------------------------------------
-# At least one file filetype must be provided, or the option "all" which expects a JGI directory format
-#------------------------------------------------------------------
 parser.add_argument('-filetype' ,"-f",  required=True, default = "ma", choices=['pf', 'tf', 'cf', 'uma', 'ma', 'gff', 'all', "dir", "kog","kegg","ipr","go","sigp", "pm", "blast", "anti"],
 					help="R|Select filetype or complete JGI directory, some files in .gz format (*).\n"
 					"-filetype pf\t: Protein FASTA file*\n"
@@ -60,7 +57,6 @@ parser.add_argument('-filetype' ,"-f",  required=True, default = "ma", choices=[
 					"-filetype pm\t: primary metabolism model (local production, NOT JGI)\n"
 					"-filetype blast\t: BLAST, all against all comparisons (local production, NOT JGI)\n"
 					"-filetype anti\t: Antismash annotation, JGI run but not part of directory structure")
-
 parser.add_argument("-source", "-s", required=True, help="R|File or directoryname, example: -source Aspbr1_AssemblyScaffolds.fasta.gz")#, type=argparse.FileType('r'))
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="R|Database name")
 parser.add_argument("-prefix", "-p", required=False, help="R|Organism prefix")
@@ -102,38 +98,42 @@ if args.verbose:
 #------------------------------------------------------------------
 # Connect to specific DB
 #------------------------------------------------------------------
-try:
-    db = mdb.connect("localhost","asp","1234",str(args.dbname))
-    print "# INFO: success connectiong to existing database %s" % args.dbname
 
-except mdb.Error, e:
-	print "# INFO: creating new database %s" % args.dbname
-	print "# INFO: loading BLAST table will take hours!"
+def database( dbname ) :
 	try:
-		db = mdb.connect("localhost","root","1234")
+	    db = mdb.connect("localhost","asp","1234",str(dbname))
+	    print "# INFO: success connectiong to existing database %s" % dbname
+
+	except mdb.Error, e:
+		print "# INFO: creating new database %s" % dbname
+		print "# INFO: loading BLAST table will take hours!"
+		try:
+			db = mdb.connect("localhost","root","1234")
+			cursor = db.cursor()
+			sql = 'CREATE DATABASE %s' % str(dbname)
+			cursor.execute(sql)	
+		except mdb.Error, e:
+			sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+
+		try:
+			db = mdb.connect("localhost","asp","1234",str(dbname))
+		except mdb.Error, e:
+			sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+
 		cursor = db.cursor()
-		sql = 'CREATE DATABASE %s' % str(args.dbname)
-		cursor.execute(sql)	
-	except mdb.Error, e:
-		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+		myfile = open ("/home/tcve/github/db_mysql/aspminedb.sql", "r") 
+		data = ''.join( [line.replace('\n', '') for line in myfile.readlines()] )
+		data = data.split(";")
 
-	try:
-		db = mdb.connect("localhost","asp","1234",str(args.dbname))
-	except mdb.Error, e:
-		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
-
-	cursor = db.cursor()
-	myfile = open ("/home/tcve/github/db_mysql/aspminedb.sql", "r") 
-	data = ''.join( [line.replace('\n', '') for line in myfile.readlines()] )
-	data = data.split(";")
-
-	cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-	for d in data:
-		cursor.execute(d)
+		cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+		for d in data:
+			cursor.execute(d)
+			db.commit()
+		cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 		db.commit()
-	cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
-	db.commit()
-#sys.exit()
+
+database( args.dbname )
+
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### Main #################################################################
@@ -143,12 +143,12 @@ source = args.source
 filetype = args.filetype
 action = args.action
 dbname = args.dbname
-
-
 org_name = ""
 org_id = ""
 
+#------------------------------------------------------------------
 # Define organism key/name
+#------------------------------------------------------------------
 if args.orgkey:
 	org_name = args.orgkey
 	print "# INFO: organism key/name was determined from argument: ", org_name
@@ -160,7 +160,9 @@ else:
 	sys.exit("# ERROR: organism key was not defined and could not be determined from path")
 
 
+#------------------------------------------------------------------
 # Load entire JGI directory structure
+#------------------------------------------------------------------
 if filetype == "dir":
 	
 	# Verify source 
