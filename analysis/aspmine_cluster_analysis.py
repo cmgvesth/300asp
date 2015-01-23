@@ -20,7 +20,8 @@ import csv
 sys.path.append('/home/tcve/github/utils/')
 from utilsArgparse import * # custom functions
 
-
+import warnings
+warnings.filterwarnings("ignore", "Unknown table.*")
 
 ##############################################################################################################################################
 ##############################################################################################################################################
@@ -33,9 +34,9 @@ startTime = datetime.now() # record runtime
 ''' Get command line arguments '''
 #------------------------------------------------------------------
 parser = CustomArgumentParser(formatter_class=SmartFormatter, 
-								description="Load primary metabolism model data into local mysql database", 
-								 usage='%(prog)s -out filename\n'
-								 "Example: python %(prog)s -dbname aspminedb -filetype model -action test -source NigerModel2013.csv")
+								description="Get single linkage clusters from gene ID or name", 
+								 usage='%(prog)s -gene [gene name] -strain [list of JGI strain names] -dbname [name of database]\n'
+								 "Example: python %(prog)s -gene An15g00560 -strain Aspni1 Aspor1 -dbname aspminedb")
 #parser.add_argument("-limit", "-l", required=False, default = 100, help="limit length selects, dafault 100, to select all set to 'all' ")
 parser.add_argument("-gene", "-g", nargs = '*', required=True, default=[None], action='store', help="List of gene names")
 parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="List of organism JGI keys")

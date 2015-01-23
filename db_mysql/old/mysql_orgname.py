@@ -45,8 +45,12 @@ class SmartFormatter( argparse.HelpFormatter ):
 # Get command line arguments
 #------------------------------------------------------------------
 parser = argparse.ArgumentParser( formatter_class=SmartFormatter, 
-								 usage='%(prog)s -action connect\n'
-								 "Example: python %(prog)s -dbname aspminedb -source organismnames.txt\n" )
+								 usage='%(prog)s -dbname [database name] -source [Organism directory listing file]\n'
+								 "Example: python %(prog)s -dbname aspminedb -source organismnames.txt\n \
+								 Program reads a TAB separated file with nice organism names and organism short code. \
+The codes are compared to the codes in the db and the real names are stored. Create source list:\\n\
+ll | awk -F, 'BEGIN{FS=" "}{print $(NF)}' | grep '^Asp' | awk -F, 'BEGIN{FS='[''}{print $1'\t['$2}'' > organismnames.txt \
+head organismnames.txt \\n Aspergillus_acidus_v1.0_	[Aspfo1]/\n Aspergillus_aculeatinus_CBS_121060_v1.0_	[Aspacu1]/ " )
 
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
@@ -83,7 +87,7 @@ file_obj = open( args.source, "r" )
 file_lines = file_obj.readlines()
 file_obj.close()        
 
-print "# INFO: number of organism in file %s" % len(file_lines)
+print "# INFO: number of organisms in file %s" % len(file_lines)
 
 # Check that only organisms expected are in the file. Also prevents strange files
 # These problems SHOULD be prevented in the initial construction of the file, but if the list is manually made this is the first validation

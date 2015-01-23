@@ -20,9 +20,10 @@ import csv
 sys.path.append('/home/tcve/github/utils/')
 from utilsArgparse import * # custom functions
 
-
 import warnings
 warnings.filterwarnings("ignore", "Unknown table.*")
+
+
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### ARGUMENTS ############################################################
@@ -34,41 +35,25 @@ startTime = datetime.now() # record runtime
 ''' Get command line arguments '''
 #------------------------------------------------------------------
 parser = CustomArgumentParser(formatter_class=SmartFormatter, 
-								description="Create protein length tale and plots", 
-								 usage='%(prog)s -out filename -dbname [database name] -sec [taxonimic section] -plot [draw plots n/y] -tab [create table n/y] -R [name of R script]\n'
-								 "Example: python %(prog)s -dbname aspminedb -plot y -tab n -out length.csv [uses existing datafile]")
-#parser.add_argument("-limit", "-l", required=False, default = 100, help="limit length selects, dafault 100, to select all set to 'all' ")
-parser.add_argument("-out", "-o", required=False, default = "lengths.csv", help="Name of output file")
+								description="Get best hits from specific gene name or ID", 
+								 usage='%(prog)s -dbname [database name] -out [output filename] -gene [JGI gene name or ID]\n'
+								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560")
+parser.add_argument("-out", "-o", required=False, default = "hitlist.csv", help="Name of output file, default hitlist.csv")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
-parser.add_argument("-sec", required=False, help="Section name")
-parser.add_argument("-plot", "-p", default = "n", required=False, help="Create plot", choices=['n', 'y'])
-parser.add_argument("-tab", "-t", default = "n", required=False, help="Create table", choices=['n', 'y'])
-parser.add_argument("-R", default="aspmine_analysis_lengths.R", required=False, help="Name of R script, default aspmine_analysis_lengths.R")
-
-#parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')
+parser.add_argument("-gene", "-g", nargs = '*',  required=True, default=[None], action='store', help="List of gene IDs or names")
+parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="List of organism JGI keys")
 
 args 	= parser.parse_args()
-section = args.sec
-plot 	= args.plot
-table 	= args.tab
-rscript = args.R
+genes 	= args.gene
+strains = args.strain
 outfile = args.out
 
 #------------------------------------------------------------------
 # Print argument values to screen
 #------------------------------------------------------------------
 print "#--------------------------------------------------------------"
-print "# ARGUMENTS :\n# Database\t:%s\n# Outfile\t:%s \n# Create Plot\t:%s \n# Create Table\t:%s \n# Rscript\t:%s" % (args.dbname, outfile, plot, table, rscript)
+print "# ARGUMENTS :\n# Database\t:%s\n# Outfile\t:%s \n# Genes\t:%s \n# Strains\t:%s" % (args.dbname, outfile, genes, strains)
 print "#--------------------------------------------------------------"
-
-if not os.path.isfile(rscript):
-	sys.exit("# ERROR: Rscript file does not exist, %s" % rscript)
-
-if table=="n": 
-	if not os.path.isfile(outfile):
-		sys.exit("# ERROR: length file does not exist, %s , run with -tab option " % outfile)
-
-#outfile = open(args.out, 'w') 
 
 ##############################################################################################################################################
 ##############################################################################################################################################
@@ -79,8 +64,8 @@ if table=="n":
 ##############################################################################################################################################
 ####################################################################### DATABASE  ############################################################
 ##############################################################################################################################################
-def make_table(outfile):
-	print "# INFO: creating length table"
+def make_database(strains, genes):
+	print "# INFO: creating subset table"
 
 	#------------------------------------------------------------------
 	# Connect to specific DB
@@ -98,13 +83,36 @@ def make_table(outfile):
 	#------------------------------------------------------------------
 	# Create table protein lengths
 	#------------------------------------------------------------------
+	(strain_string, gene_string) = ("","")
+
+	for s in range(0,len(strains)):
+		strain_string += " b.blast_qseq_jg1 = \'" + strains[s] + "\' or b.blast_sseq_jg1 = \'" + strains[s] + "\'"
+		if s != len(strains)-1:
+			strain_string += " or "
+
+
+	for i in range(0,len(genes)):
+		gene_string += " a.blast_qseq_id like \'%" + genes[i] + "%\' or a.blast_sseq_id like \'%" + genes[i] + "%\'"
+		if i != len(genes)-1:
+			gene_string += " or "
+	
 	try:
-		cursor.execute("drop table IF EXISTS lengths ;")
-		cursor.execute("create table lengths as select org_id, prot_seqname, length(prot_seq) as len from proteins;")
+		cursor.execute("drop table IF EXISTS tmp ;")
+		cursor.execute("create table tmp as \
+						select a.* from blast a \
+						left join blast b \
+						on b.blast_qseq_id=a.blast_sseq_id \
+						and b.blast_sseq_id=a.blast_qseq_id \
+						and b.blast_qseq_id<>b.blast_sseq_id \
+						where ( " + gene_string + ") \
+						and (" + strain_string + ") \
+						and (b.blast_qseq_id is null or b.blast_qseq_id >= a.blast_qseq_id);")
 
 	except mdb.Error, e:
 		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
+	""" TO DO: check if table is empty """	
+	sys.exit()	
 	#------------------------------------------------------------------
 	# Get protein lengths
 	# Using panda sql to get data from the database into a R readable format
@@ -131,24 +139,4 @@ def make_table(outfile):
 	writer.writerows(result)
 	f.close()
 
-##############################################################################################################################################
-####################################################################### PLOT      ############################################################
-##############################################################################################################################################
-def make_plot(outfile):
-	print "# INFO: running Rscript"
-	os.system("R CMD BATCH '--args %s' aspmine_analysis_lengths.R test.out " % outfile)
-
-
-if table=="y":
-	make_table(outfile)
-	if plot=="y":
-		make_plot(outfile)
-
-if table=="n" and plot=="y":
-	make_plot(outfile)
-
-
-
-
-
-
+make_database(strains, genes)
