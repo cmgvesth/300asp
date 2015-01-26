@@ -36,18 +36,19 @@ startTime = datetime.now() # record runtime
 #------------------------------------------------------------------
 parser = CustomArgumentParser(formatter_class=SmartFormatter, 
 								description="Get best hits from specific gene name or ID", 
-								 usage='%(prog)s -dbname [database name] -out [output filename] -gene [JGI gene name or ID]\n'
-								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560")
+								 usage='%(prog)s -dbname [database name] -out [output filename] -gene [JGI gene name or ID] -strain [JGI organism keys] \n'
+								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560 -strain Aspni_DSM_1")
 parser.add_argument("-out", "-o", required=False, default = "hitlist.csv", help="Name of output file, default hitlist.csv")
 parser.add_argument("-tab", "-t", required=False, help="Create table new or use existing tmp")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
+parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="JGI organism keys")
 parser.add_argument("-gene", "-g", nargs = '*',  required=True, default=[None], action='store', help="List of gene IDs or names")
-parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="List of organism JGI keys")
 
 args 	= parser.parse_args()
 genes 	= args.gene
 strains = args.strain
 outfile = args.out
+table 	= args.tab
 
 #------------------------------------------------------------------
 # Print argument values to screen
@@ -76,11 +77,12 @@ except mdb.Error, e:
 ##############################################################################################################################################
 
 ##############################################################################################################################################
-####################################################################### make_database  #######################################################
+def make_database(strain_string, gene_string):
 ##############################################################################################################################################
-def make_database(strains, genes):
 	print "# INFO: creating subset table"
 
+	strain_string	= strain_string.replace("blast", "a.blast")
+	gene_string		= gene_string.replace("blast", "a.blast")
 	#------------------------------------------------------------------
 	# This table includes two way hits, as it gets both sseq and qseq data
 	# These hits could be the same but in rare cases they might differ
@@ -100,7 +102,7 @@ def make_database(strains, genes):
 						and (b.blast_qseq_id is null or b.blast_qseq_id >= a.blast_qseq_id);")
 
 	except mdb.Error, e:
-		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
 
 	cursor.execute("SELECT count(*) FROM tmp")
 	result = cursor.fetchall()
@@ -108,17 +110,11 @@ def make_database(strains, genes):
 	if not type(result) is tuple:
 		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
 
-	#------------------------------------------------------------------
-	# Get protein lengths
-	# Using panda sql to get data from the database into a R readable format
-	# psql.read_frame
-	#------------------------------------------------------------------
+	print "# INFO: created table tmp using gene string %s and strain string %s" % (gene_string, strain_string)
+		
 ##############################################################################################################################################
-####################################################################### get_data  ############################################################
+def get_data ():
 ##############################################################################################################################################
-
-def get_data (strains, genes):
-
 	result = ""
 
 	try: 
@@ -127,17 +123,14 @@ def get_data (strains, genes):
 						where s.blast_qseq_jg1=r.blast_qseq_jg1 and s.blast_sseq_jg1=r.blast_sseq_jg1  \
 						group by s.blast_sseq_jg1,s.blast_qseq_jg1);")
 	except mdb.Error, e:
-		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
+		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
 
 	result = cursor.fetchall()
 
 	if not type(result) is tuple:
 		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
 
-	f = open(outfile,'wb')
-	writer = csv.writer(f, dialect = 'excel')
-	writer.writerows(result)
-	f.close()
+	print "# INFO: get_data returns %s rows from tmp" % len(result)	
 
 ##############################################################################################################################################
 ##############################################################################################################################################
@@ -151,29 +144,47 @@ def get_data (strains, genes):
 (strain_string, gene_string) = ("","")
 
 for s in range(0,len(strains)):
-	strain_string += " b.blast_qseq_jg1 = \'" + strains[s] + "\' or b.blast_sseq_jg1 = \'" + strains[s] + "\'"
+	strain_string += "blast_qseq_jg1 = \'" + strains[s] + "\' or blast_sseq_jg1 = \'" + strains[s] + "\'"
 	if s != len(strains)-1:
 		strain_string += " or "
 
 
 for i in range(0,len(genes)):
-	gene_string += " a.blast_qseq_id like \'%" + genes[i] + "%\' or a.blast_sseq_id like \'%" + genes[i] + "%\'"
+	gene_string += " blast_qseq_id like \'%" + genes[i] + "%\' or blast_sseq_id like \'%" + genes[i] + "%\'"
 	if i != len(genes)-1:
 		gene_string += " or "
 
 #------------------------------------------------------------------
 # Check if table tmp already contains the needed genesa and strains 
 #------------------------------------------------------------------
+print table
 
+try: 
+	cursor.execute("SELECT blast_sseq_id,blast_qseq_id FROM tmp WHERE ( " + gene_string + ") AND (" + strain_string + ") ;")
+	
+except mdb.Error, e:
+		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
+
+result = cursor.fetchall()
+
+print len(result)
+
+if len(result) < 1:
+	if not table:
+		sys.exit("# ERROR: table tmp does not contain the needed genes/strains\n# Run with -t option to redo the table")
+	else:
+		print "# INFO: table tmp does not contain the needed genes/strains\n# Creating new tmp table"	
+
+sys.exit()
 #------------------------------------------------------------------
 # create table if specified or if tmp does not contain the right genes and strains
 #------------------------------------------------------------------
 if table :
-	make_database(strains, genes)
+	make_database(strain_string, gene_string)
 
 #------------------------------------------------------------------
 # Get data from tmp table
 #------------------------------------------------------------------
-get_data(strains, genes)
+get_data()
 
 
