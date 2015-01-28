@@ -17,6 +17,7 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560 -strain Aspni_DSM_1")
 parser.add_argument("-out", "-o", required=False, default = "hitlist.csv", help="Name of output file, default hitlist.csv")
 parser.add_argument("-tab", "-t", required=False, action='store_true', help="Create table new or use existing tmp")
+parser.add_argument("-rep", "-r", required=False, action='store_true', help="Use reciprocal best matches when selecting from tmp table")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="JGI organism keys")
 parser.add_argument("-gene", "-g", nargs = '*',  required=True, default=[None], action='store', help="List of gene IDs or names")
@@ -26,7 +27,7 @@ genes 	= args.gene
 strains = args.strain
 outfile = args.out
 table 	= args.tab
-
+rep 	= args.rep
 '''------------------------------------------------------------------
 # Print argument values to screen
 ------------------------------------------------------------------'''
@@ -73,16 +74,16 @@ def make_database(strain_string, gene_string):
 	------------------------------------------------------------------'''
 
 	try:
-		cursor.execute("drop table IF EXISTS tmp ;")
-		cursor.execute("create table tmp as \
-						select a.* from blast a \
-						left join blast b \
-						on b.blast_qseq_id=a.blast_sseq_id \
-						and b.blast_sseq_id=a.blast_qseq_id \
-						and b.blast_qseq_id<>b.blast_sseq_id \
-						where ( " + gene_string + ") \
-						and (" + strain_string + ") \
-						and (b.blast_qseq_id is null or b.blast_qseq_id >= a.blast_qseq_id);")
+		cursor.execute("DROP table IF EXISTS tmp ;")
+		cursor.execute("CREATE table tmp as \
+						SELECT a.* FROM blast a \
+						LEFT JOIN blast b \
+						ON b.blast_qseq_id=a.blast_sseq_id \
+						AND b.blast_sseq_id=a.blast_qseq_id \
+						AND b.blast_qseq_id<>b.blast_sseq_id \
+						WHERE ( " + gene_string + ") \
+						AND (" + strain_string + ") \
+						AND (b.blast_qseq_id is null OR b.blast_qseq_id >= a.blast_qseq_id);")
 
 	except mdb.Error, e:
 		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
@@ -96,13 +97,15 @@ def make_database(strain_string, gene_string):
 	print "# INFO: created table tmp using gene string:\n# %s\n# and strain string:\n# %s" % (gene_string, strain_string)
 		
 ##################################################################
-def get_data ():
+def get_data_reciprocal ():
 ##################################################################
 	result = ""
 
 	try: 
-		cursor.execute("select blast_sseq_id,blast_qseq_id,blast_pident from tmp r \
-						where blast_pident=(select max(cast( blast_pident as DECIMAL(5,2))) from tmp s \
+		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1, \
+						(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov\
+						from tmp r \
+						where blast_pident=(select max(blast_pident) from tmp s \
 						where s.blast_qseq_jg1=r.blast_qseq_jg1 and s.blast_sseq_jg1=r.blast_sseq_jg1  \
 						and s.blast_qseq_jg1 != s.blast_sseq_jg1\
 						group by s.blast_sseq_jg1,s.blast_qseq_jg1);")
@@ -118,13 +121,30 @@ def get_data ():
 		sys.exit("# ERROR: query returned no rows, verify strains and gene names")	
 	#print "# INFO: get_data returns %s rows from tmp" % len(result)	
 
-	f = open(outfile,'wb')
-	writer = csv.writer(f, dialect = 'excel', delimiter=";")
-	writer.writerows(result)
-	f.close()
-
 	return result
 
+##################################################################
+def get_data ():
+##################################################################
+	result = ""
+
+	try: 
+		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,\
+						(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov\
+						from tmp where blast_qseq_jg1 != blast_sseq_jg1;")
+	except mdb.Error, e:
+		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
+
+	result = cursor.fetchall()
+
+	if not type(result) is tuple:
+		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
+
+	if len(result) < 1:
+		sys.exit("# ERROR: query returned no rows, verify strains and gene names")	
+	#print "# INFO: get_data returns %s rows from tmp" % len(result)	
+
+	return result
 ##################################################################
 def test_table(strain_string, gene_string):
 ##################################################################
@@ -133,7 +153,6 @@ def test_table(strain_string, gene_string):
 	# The user might think that the table is already there.
 	# For the case where that is wrong, error and tell to run new table
 	------------------------------------------------------------------'''
-
 
 	try: 
 		cursor.execute("SELECT blast_sseq_id,blast_qseq_id FROM tmp WHERE ( " + gene_string + ") AND (" + strain_string + ") ;")
@@ -187,7 +206,20 @@ else:
 '''------------------------------------------------------------------
 # Get data from tmp table
 ------------------------------------------------------------------'''
-result = get_data()
+if rep:
+	result = get_data_reciprocal()
+
+else: 
+	result = get_data()
+
+
+f = open(outfile,'wb')
+writer = csv.writer(f, dialect = 'excel', delimiter=";")
+columns = map(lambda x:x[0], cursor.description) 	
+writer.writerow(columns)
+writer.writerows(result)
+f.close()
+
 nr_rows = len(result)
 
 percent = [float(row[2]) for row in result ]
