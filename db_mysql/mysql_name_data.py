@@ -1,12 +1,11 @@
 #!/usr/bin/python
 
-#------------------------------------------------------------------
+'''##################################################################
 # Imports
-#------------------------------------------------------------------
-import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os
-import gzip
-import xlrd
+##################################################################'''
+import sys 
+sys.path.append('../utils/')
+from aspmine_imports import *
 
 """
 CODEBOOK INFO:

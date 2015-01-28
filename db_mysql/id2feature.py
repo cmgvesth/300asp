@@ -1,19 +1,11 @@
 #!/usr/bin/python
 
-#------------------------------------------------------------------
+'''##################################################################
 # Imports
-#------------------------------------------------------------------
-import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os, gzip
-
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
-
-sys.path.append('/home/tcve/github/utils/')
-from utilsDataFormats import *
-from utilsFileOperations import *
+##################################################################'''
+import sys 
+sys.path.append('../utils/')
+from aspmine_imports import *
 
 
 ##############################################################################################################################################

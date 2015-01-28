@@ -1,28 +1,12 @@
 #!/usr/bin/python
 
-#------------------------------------------------------------------
+'''##################################################################
 # Imports
-#------------------------------------------------------------------
-import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os, gzip
-from datetime import datetime
+##################################################################'''
+import sys 
+sys.path.append('../utils/')
+from aspmine_imports import *
 
-''' bio python '''
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
-
-''' math '''
-import csv
-
-''' local libs '''
-sys.path.append('/home/tcve/github/utils/')
-from utilsArgparse import * # custom functions
-
-
-import warnings
-warnings.filterwarnings("ignore", "Unknown table.*")
 ##############################################################################################################################################
 ##############################################################################################################################################
 ####################################################################### ARGUMENTS ############################################################
@@ -41,8 +25,8 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 parser.add_argument("-out", "-o", required=False, default = "lengths.csv", help="Name of output file")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-sec", required=False, help="Section name")
-parser.add_argument("-plot", "-p", default = "n", required=False, help="Create plot", choices=['n', 'y'])
-parser.add_argument("-tab", "-t", default = "n", required=False, help="Create table", choices=['n', 'y'])
+parser.add_argument("-plot", "-p", action='store_true', required=False, help="Create plot")
+parser.add_argument("-tab", "-t", action='store_true', required=False, help="Create table")
 parser.add_argument("-R", default="aspmine_analysis_lengths.R", required=False, help="Name of R script, default aspmine_analysis_lengths.R")
 
 #parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')

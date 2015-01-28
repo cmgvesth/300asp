@@ -3,11 +3,11 @@
 #------------------------------------------------------------------
 # Imports
 #------------------------------------------------------------------
-import sys, getopt, argparse, re, glob, os, gzip
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
+'''##################################################################
+# Imports
+##################################################################'''
+import sys 
+from aspmine_imports import *
 
 #######################################################################
 # Decompress TAB files
