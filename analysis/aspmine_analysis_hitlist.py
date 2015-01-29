@@ -17,28 +17,28 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560 -strain Aspni_DSM_1")
 parser.add_argument("-out", "-o", required=False, default = "hitlist.csv", help="Name of output file, default hitlist.csv")
 parser.add_argument("-tab", "-t", required=False, action='store_true', help="Create table new or use existing tmp")
-parser.add_argument("-rep", "-r", required=False, action='store_true', help="Use reciprocal best matches when selecting from tmp table")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
-parser.add_argument("-strain", "-s", nargs = '*',  required=True, default=[None], action='store', help="JGI organism keys")
-parser.add_argument("-gene", "-g", nargs = '*',  required=True, default=[None], action='store', help="List of gene IDs or names")
+parser.add_argument("-strain", "-s", required=True, default=[None], action='store', help="JGI organism keys")
+parser.add_argument("-gene", "-g",  required=True, default=[None], action='store', help="List of gene ID or name")
 
 args 	= parser.parse_args()
-genes 	= args.gene
-strains = args.strain
+gene 	= args.gene
+strain = args.strain
 outfile = args.out
 table 	= args.tab
-rep 	= args.rep
+
 '''------------------------------------------------------------------
 # Print argument values to screen
 ------------------------------------------------------------------'''
 print "#--------------------------------------------------------------\n\
 # ARGUMENTS\n\
+# Description\t: Script return list of best bidirectional hit for a gene in a specific strain\n\
 # Database\t: %s\n\
 # Outfile\t: %s\n\
-# Genes\t\t: %s\n\
-# Strains\t: %s\n\
+# Gene\t\t: %s\n\
+# Strain\t: %s\n\
 # Table\t\t: %s\n\
-#--------------------------------------------------------------" % (args.dbname, outfile, genes, strains, table)
+#--------------------------------------------------------------" % (args.dbname, outfile, gene, strain, table)
 
 '''------------------------------------------------------------------
 # Connect to specific DB
@@ -57,11 +57,10 @@ except mdb.Error, e:
 # FUNCTIONS
 ##################################################################
 
-
 ##################################################################
 def make_database(strain_string, gene_string):
 ##################################################################
-	print "# INFO: creating subset table"
+	print "# INFO: Creating subset table"
 
 	strain_string	= strain_string.replace("blast", "a.blast")
 	gene_string		= gene_string.replace("blast", "a.blast")
@@ -80,10 +79,10 @@ def make_database(strain_string, gene_string):
 						LEFT JOIN blast b \
 						ON b.blast_qseq_id=a.blast_sseq_id \
 						AND b.blast_sseq_id=a.blast_qseq_id \
-						AND b.blast_qseq_id<>b.blast_sseq_id \
+						AND b.blast_qseq_id!=b.blast_sseq_id \
 						WHERE ( " + gene_string + ") \
-						AND (" + strain_string + ") \
-						AND (b.blast_qseq_id is null OR b.blast_qseq_id >= a.blast_qseq_id);")
+						AND (" + strain_string + ")\
+						AND (b.blast_qseq_id IS NULL OR b.blast_qseq_id > a.blast_qseq_id);")
 
 	except mdb.Error, e:
 		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
@@ -94,44 +93,50 @@ def make_database(strain_string, gene_string):
 	if not type(result) is tuple:
 		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
 
-	print "# INFO: created table tmp using gene string:\n# %s\n# and strain string:\n# %s" % (gene_string, strain_string)
-		
-##################################################################
-def get_data_reciprocal ():
-##################################################################
-	result = ""
+	print "# INFO: Created table tmp using gene string:\n# %s\n# and strain string:\n# %s" % (gene_string, strain_string)
+	"""
+	SELECT *  FROM `tmp` WHERE `blast_qseq_jg1` LIKE 'Aspacu1' OR `blast_sseq_jg1` LIKE 'Aspacu1'
+	ORDER BY `tmp`.`blast_pident` ASC
 
-	try: 
-		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1, \
-						(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov\
-						from tmp r \
-						where blast_pident=(select max(blast_pident) from tmp s \
-						where s.blast_qseq_jg1=r.blast_qseq_jg1 and s.blast_sseq_jg1=r.blast_sseq_jg1  \
-						and s.blast_qseq_jg1 != s.blast_sseq_jg1\
-						group by s.blast_sseq_jg1,s.blast_qseq_jg1);")
-	except mdb.Error, e:
-		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
+	SELECT *  FROM `blast` WHERE 
+	(`blast_qseq_jg1` LIKE 'Aspacu1' OR `blast_sseq_jg1` LIKE 'Aspacu1') and 
+	(`blast_qseq_jg1` LIKE 'Aspni7' OR `blast_sseq_jg1` LIKE 'Aspni7') and 
+	(`blast_qseq_jg2`="1123159" or `blast_sseq_jg2`="1123159")
+	ORDER BY `blast_pident` ASC
 
-	result = cursor.fetchall()
-
-	if not type(result) is tuple:
-		sys.exit("# ERROR : result of query is not a tuple but a %s" % type(result))
-
-	if len(result) < 1:
-		sys.exit("# ERROR: query returned no rows, verify strains and gene names")	
-	#print "# INFO: get_data returns %s rows from tmp" % len(result)	
-
-	return result
-
+	CREATE table tmp as 
+	SELECT a.blast_sseq_id, a.blast_qseq_id, a.blast_pident FROM blast as a 
+	LEFT JOIN blast as b 
+	ON b.blast_qseq_id=a.blast_sseq_id AND 
+	b.blast_sseq_id=a.blast_qseq_id AND 
+	b.blast_qseq_id<>b.blast_sseq_id WHERE 
+	(a.blast_qseq_id like '%1123159%' or a.blast_sseq_id like '%1123159%') AND   
+	(a.blast_qseq_jg1 = 'Aspni7' or a.blast_sseq_jg1 = 'Aspni7') AND
+	(a.blast_qseq_jg1 LIKE 'Aspacu1' OR a.blast_sseq_jg1 LIKE 'Aspacu1') AND
+	(b.blast_qseq_id is null OR b.blast_qseq_id >= a.blast_qseq_id);
+	"""		
 ##################################################################
 def get_data ():
 ##################################################################
 	result = ""
 
+	"""
+	SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,
+	(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov
+	FROM `tmp` WHERE `blast_qseq_jg1` LIKE 'Aspnov1' OR `blast_sseq_jg1` LIKE 'Aspnov1'
+	ORDER BY `tmp`.`blast_pident` ASC
+	"""
 	try: 
-		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,\
-						(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov\
-						from tmp where blast_qseq_jg1 != blast_sseq_jg1;")
+		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov \
+			from tmp t  where blast_qseq_jg1 != blast_sseq_jg1 and  \
+			blast_pident in ( select greatest(maxa,maxb) as pairmax from  \
+			(select blast_qseq_jg1, blast_sseq_jg1, max(blast_pident) as maxa from tmp as a group by blast_qseq_jg1,blast_sseq_jg1) as a \
+			join  \
+			(select blast_qseq_jg1, blast_sseq_jg1, max(blast_pident) as maxb from tmp as a group by blast_sseq_jg1,blast_qseq_jg1) as b \
+			on b.blast_qseq_jg1=a.blast_sseq_jg1 and b.blast_sseq_jg1=a.blast_qseq_jg1 \
+			WHERE (t.blast_qseq_jg1 = a.blast_qseq_jg1 or  t.blast_qseq_jg1 = a.blast_sseq_jg1) and \
+			(t.blast_sseq_jg1 = a.blast_sseq_jg1 or t.blast_sseq_jg1 = a.blast_qseq_jg1));")
+
 	except mdb.Error, e:
 		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
 
@@ -145,6 +150,7 @@ def get_data ():
 	#print "# INFO: get_data returns %s rows from tmp" % len(result)	
 
 	return result
+
 ##################################################################
 def test_table(strain_string, gene_string):
 ##################################################################
@@ -153,7 +159,6 @@ def test_table(strain_string, gene_string):
 	# The user might think that the table is already there.
 	# For the case where that is wrong, error and tell to run new table
 	------------------------------------------------------------------'''
-
 	try: 
 		cursor.execute("SELECT blast_sseq_id,blast_qseq_id FROM tmp WHERE ( " + gene_string + ") AND (" + strain_string + ") ;")
 	except mdb.Error, e:
@@ -176,8 +181,12 @@ def test_table(strain_string, gene_string):
 '''------------------------------------------------------------------
 # Create strain and gene query strings
 ------------------------------------------------------------------'''
-(strain_string, gene_string) = ("","")
+#(strain_string, gene_string) = ("","")
 
+strain_string = "blast_qseq_jg1 = \'" + strain + "\' or blast_sseq_jg1 = \'" + strain + "\'"
+gene_string = "blast_qseq_id like \'%" + gene + "%\' or blast_sseq_id like \'%" + gene + "%\'"
+
+"""
 for s in range(0,len(strains)):
 	strain_string += "blast_qseq_jg1 = \'" + strains[s] + "\' or blast_sseq_jg1 = \'" + strains[s] + "\'"
 	if s != len(strains)-1:
@@ -188,13 +197,13 @@ for i in range(0,len(genes)):
 	gene_string += "blast_qseq_id like \'%" + genes[i] + "%\' or blast_sseq_id like \'%" + genes[i] + "%\'"
 	if i != len(genes)-1:
 		gene_string += " or "
-
+"""
 '''------------------------------------------------------------------
 # TEST content of existing tmp table
 # create table if tmp does not contain the right genes and strains
 ------------------------------------------------------------------'''
 if table:
-	print "# INFO: Creating table tmp"
+	#print "# INFO: Creating table tmp"
 	make_database(strain_string, gene_string)
 
 if cursor.execute("SHOW TABLES LIKE 'tmp' ;"):
@@ -206,12 +215,7 @@ else:
 '''------------------------------------------------------------------
 # Get data from tmp table
 ------------------------------------------------------------------'''
-if rep:
-	result = get_data_reciprocal()
-
-else: 
-	result = get_data()
-
+result = get_data()
 
 f = open(outfile,'wb')
 writer = csv.writer(f, dialect = 'excel', delimiter=";")
@@ -219,6 +223,9 @@ columns = map(lambda x:x[0], cursor.description)
 writer.writerow(columns)
 writer.writerows(result)
 f.close()
+
+#for r in result:
+#	print r
 
 nr_rows = len(result)
 
@@ -247,3 +254,90 @@ print "#--------------------------------------------------------------\n\
 # Comparisons with min\t: %s\n\
 #--------------------------------------------------------------" % \
 ( (datetime.now()-startTime), nr_rows, mean_id, max_id, '\n#\t\t\t: '.join(map(str, max_string)), min_id, '\n#\t\t\t: '.join(map(str, min_string)))
+
+
+"""
+
+SELECT r.blast_sseq_id,r.blast_qseq_id,r.blast_pident, r.blast_qseq_jg1, r.blast_sseq_jg1, 
+(r.blast_qend-r.blast_qstart)/r.blast_qlen*100 as qcov, (r.blast_send-r.blast_sstart)/r.blast_slen*100 as scov
+from tmp r LEFT JOIN tmp s ON 
+s.blast_qseq_id=r.blast_sseq_id and 
+s.blast_sseq_id=r.blast_qseq_id and 
+s.blast_sseq_id<>s.blast_qseq_id 
+WHERE (s.blast_sseq_id IS NULL or s.blast_sseq_id > r.blast_sseq_id) 
+and r.blast_pident = (
+select max(blast_pident) from tmp a 
+where a.blast_sseq_id=r.blast_sseq_id and 
+a.blast_qseq_id=r.blast_qseq_id 
+group by a.blast_qseq_jg1, a.blast_sseq_jg1)
+GROUP BY r.blast_sseq_jg1,r.blast_qseq_jg1;
+
+
+
+
+SELECT r.blast_sseq_id,r.blast_qseq_id,r.blast_pident, r.blast_qseq_jg1, r.blast_sseq_jg1, \
+(r.blast_qend-r.blast_qstart)/r.blast_qlen*100 as qcov, (r.blast_send-r.blast_sstart)/r.blast_slen*100 as scov\
+from tmp r LEFT JOIN tmp s ON \
+s.blast_qseq_id=r.blast_sseq_id and \
+s.blast_sseq_id=r.blast_qseq_id and \
+s.blast_sseq_id<>s.blast_qseq_id \
+WHERE (s.blast_sseq_id IS NULL or s.blast_sseq_id > r.blast_sseq_id) \
+and r.blast_pident = (\
+select max(blast_pident) from tmp a where group by a.blast_qseq_jg1, a.blast_sseq_jg1)\
+GROUP BY r.blast_sseq_jg1,r.blast_qseq_jg1;
+
+
+SELECT r.blast_sseq_jg1,r.blast_qseq_jg1,max(r.blast_pident), s.blast_sseq_jg1,s.blast_qseq_jg1,max(s.blast_pident)
+from tmp r LEFT JOIN tmp s ON \
+s.blast_qseq_id=r.blast_sseq_id and \
+s.blast_sseq_id=r.blast_qseq_id and \
+s.blast_sseq_id<>s.blast_qseq_id \
+#WHERE (s.blast_sseq_id IS NULL or s.blast_sseq_id > r.blast_sseq_id)
+GROUP BY r.blast_sseq_jg1,r.blast_qseq_jg1;
+
+
+SELECT r.blast_sseq_id,r.blast_qseq_id, s.blast_sseq_id,s.blast_qseq_id
+from tmp r JOIN tmp s ON \
+s.blast_qseq_id=r.blast_sseq_id and \
+s.blast_sseq_id=r.blast_qseq_id and \
+WHERE (s.blast_sseq_id IS NOT NULL);
+
+
+SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 from
+tmp a where blast_qseq_jg1 != blast_sseq_jg1 AND 
+blast_pident = (SELECT max(b.blast_pident) from tmp b WHERE
+b.blast_qseq_jg1=a.blast_qseq_jg1 AND b.blast_sseq_jg1=a.blast_sseq_jg1 AND 
+b.blast_sseq_jg1<> b.blast_qseq_jg1)
+
+
+
+
+
+Get maximum value for each organism pair:
+select a.blast_qseq_jg1,a.blast_sseq_jg1,greatest(maxa,maxb) as pairmax from 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxa from tmp as a group by blast_qseq_jg1,blast_sseq_jg1) as a 
+join 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxb from tmp as a group by blast_sseq_jg1,blast_qseq_jg1) as b 
+on (b.blast_qseq_jg1=a.blast_sseq_jg1 and b.blast_sseq_jg1=a.blast_qseq_jg1);
+
+
+
+
+SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov
+from tmp t 
+where blast_qseq_jg1 != blast_sseq_jg1 and 
+blast_pident in ( select greatest(maxa,maxb) as pairmax from 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxa from tmp as a group by blast_qseq_jg1,blast_sseq_jg1) as a 
+join 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxb from tmp as a group by blast_sseq_jg1,blast_qseq_jg1) as b 
+on b.blast_qseq_jg1=a.blast_sseq_jg1 and b.blast_sseq_jg1=a.blast_qseq_jg1
+WHERE (t.blast_qseq_jg1 = a.blast_qseq_jg1 or  t.blast_qseq_jg1 = a.blast_sseq_jg1) and 
+(t.blast_sseq_jg1 = a.blast_sseq_jg1 or t.blast_sseq_jg1 = a.blast_qseq_jg1))
+
+
+select a.blast_qseq_jg1 as qorg,a.blast_sseq_jg1 as sorg,greatest(maxa,maxb) as pairmax from 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxa from tmp as a group by blast_qseq_jg1,blast_sseq_jg1) as a 
+join 
+(select blast_qseq_jg1,blast_sseq_jg1,max(blast_pident) as maxb from tmp as a group by blast_sseq_jg1,blast_qseq_jg1) as b 
+on b.blast_qseq_jg1=a.blast_sseq_jg1 and b.blast_sseq_jg1=a.blast_qseq_jg1
+"""
