@@ -3,8 +3,8 @@
 '''##################################################################
 # Imports
 ##################################################################'''
-import sys 
-sys.path.append('../utils/')
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
 from aspmine_imports import *
 
 '''##################################################################
@@ -120,14 +120,10 @@ def get_data ():
 ##################################################################
 	result = ""
 
-	"""
-	SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,
-	(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov
-	FROM `tmp` WHERE `blast_qseq_jg1` LIKE 'Aspnov1' OR `blast_sseq_jg1` LIKE 'Aspnov1'
-	ORDER BY `tmp`.`blast_pident` ASC
-	"""
 	try: 
-		cursor.execute("SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov \
+		cursor.execute("DROP table IF EXISTS tmp_rep ;")
+		cursor.execute("CREATE TABLE tmp_rep as \
+			SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov \
 			from tmp t  where blast_qseq_jg1 != blast_sseq_jg1 and  \
 			blast_pident in ( select greatest(maxa,maxb) as pairmax from  \
 			(select blast_qseq_jg1, blast_sseq_jg1, max(blast_pident) as maxa from tmp as a group by blast_qseq_jg1,blast_sseq_jg1) as a \
@@ -137,9 +133,11 @@ def get_data ():
 			WHERE (t.blast_qseq_jg1 = a.blast_qseq_jg1 or  t.blast_qseq_jg1 = a.blast_sseq_jg1) and \
 			(t.blast_sseq_jg1 = a.blast_sseq_jg1 or t.blast_sseq_jg1 = a.blast_qseq_jg1));")
 
+		cursor.execute("SELECT * from tmp_rep")
+
 	except mdb.Error, e:
 		sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
-
+	
 	result = cursor.fetchall()
 
 	if not type(result) is tuple:
@@ -186,18 +184,7 @@ def test_table(strain_string, gene_string):
 strain_string = "blast_qseq_jg1 = \'" + strain + "\' or blast_sseq_jg1 = \'" + strain + "\'"
 gene_string = "blast_qseq_id like \'%" + gene + "%\' or blast_sseq_id like \'%" + gene + "%\'"
 
-"""
-for s in range(0,len(strains)):
-	strain_string += "blast_qseq_jg1 = \'" + strains[s] + "\' or blast_sseq_jg1 = \'" + strains[s] + "\'"
-	if s != len(strains)-1:
-		strain_string += " or "
 
-
-for i in range(0,len(genes)):
-	gene_string += "blast_qseq_id like \'%" + genes[i] + "%\' or blast_sseq_id like \'%" + genes[i] + "%\'"
-	if i != len(genes)-1:
-		gene_string += " or "
-"""
 '''------------------------------------------------------------------
 # TEST content of existing tmp table
 # create table if tmp does not contain the right genes and strains
@@ -224,9 +211,39 @@ writer.writerow(columns)
 writer.writerows(result)
 f.close()
 
-#for r in result:
-#	print r
+'''------------------------------------------------------------------
+# Get seqs
+------------------------------------------------------------------'''
+try:
+	cursor.execute("select distinct prot_seqname, prot_seq from proteins join (\
+			select \
+			IF (LOCATE('Aacu16872_0', seqid)>0 and LOCATE('|', seqid)<1, SUBSTRING(seqid, LOCATE('Aacu16872_0', seqid)+11), seqid) AS seqid, \
+			IF (orgid = '', 'NRRL3', REPLACE(orgid, 'NRRL3', 'Aspni_NRRL3_1')) AS orgid \
+			from (select distinct *\
+			from (select blast_sseq_id as seqid, blast_sseq_jg1 as orgid from tmp_rep \
+				union all \
+				select blast_qseq_id as seqid,blast_qseq_jg1 as orgid from tmp_rep) as a) as b) as d\
+			on( prot_seqname like concat( '%', seqid, '%') and prot_orgkey like concat(orgid,'%')\
+			) order by prot_seqname;")
 
+except mdb.Error, e:
+	sys.exit("# ERROR: executing following query failed:\n%s\n # ERROR %d: %s" % (cursor._last_executed, e.args[0],e.args[1]))
+
+seqdata = cursor.fetchall()
+f = open("hitseqs.csv",'wb')
+writer = csv.writer(f, dialect = 'excel', delimiter=";")
+columns = map(lambda x:x[0], cursor.description) 	
+writer.writerow(columns)
+writer.writerows(seqdata)
+f.close()
+
+
+os.system("sed 's/^/>/' hitseqs.csv | sed 's/;/\\n/' | grep -v prot > hitseqs.fsa")
+os.system("rm hitseqs.csv")
+
+'''------------------------------------------------------------------
+# Final information to user
+------------------------------------------------------------------'''
 nr_rows = len(result)
 
 percent = [float(row[2]) for row in result ]
@@ -240,9 +257,7 @@ max_string = [row[0:2] for row in result if float(row[2]) == max_id]
 
 min_string = ["%s -- VS -- %s" % tup for tup in min_string]
 max_string = ["%s -- VS -- %s" % tup for tup in max_string]
-'''------------------------------------------------------------------
-# Final information to user
-------------------------------------------------------------------'''
+
 print "#--------------------------------------------------------------\n\
 # ARGUMENTS\n\
 # Runtime\t\t: %s\n\
@@ -256,7 +271,56 @@ print "#--------------------------------------------------------------\n\
 ( (datetime.now()-startTime), nr_rows, mean_id, max_id, '\n#\t\t\t: '.join(map(str, max_string)), min_id, '\n#\t\t\t: '.join(map(str, min_string)))
 
 
+
+
+'''------------------------------------------------------------------
+# NOTES
+------------------------------------------------------------------'''
+
 """
+
+select IF (seqid = '', '_0', REPLACE(seqid, '_0', '%')) AS seqid, orgid  from (select distinct * from (select blast_sseq_id as seqid, blast_sseq_jg1 as orgid from tmp_rep union all select blast_qseq_id as seqid,blast_qseq_jg1 as orgid from tmp_rep) as a) as b;
+select 
+if(LOCATE('_0', seqid)>0 and LOCATE('|', seqid)<1, SUBSTRING(seqid, LOCATE('_0', seqid)+2), seqid) AS seqid, 
+orgid  from (
+	select distinct * from (
+		select blast_sseq_id as seqid, blast_sseq_jg1 as orgid from tmp_rep 
+		union all 
+		select blast_qseq_id as seqid,blast_qseq_jg1 as orgid from tmp_rep) 
+	as a) 
+as b
+
+IF (seqid = '', '_0', REPLACE(seqid, '_', '%')) AS seqid )
+
+select distinct(prot_seqname) from proteins join (
+select 
+IF (LOCATE('Aacu16872_0', seqid)>0 and LOCATE('|', seqid)<1, SUBSTRING(seqid, LOCATE('Aacu16872_0', seqid)+11), seqid) AS seqid, 
+IF (orgid = '', 'NRRL3', REPLACE(orgid, 'NRRL3', 'Aspni_NRRL3_1')) AS orgid from (select distinct * from (select blast_sseq_id as seqid, blast_sseq_jg1 as orgid from tmp_rep union all select blast_qseq_id as seqid,blast_qseq_jg1 as orgid from tmp_rep) as a) as b) as d
+on( prot_seqname like concat( "%", seqid, "%") and prot_orgkey like concat(orgid,"%")
+) order by prot_seqname;
+
+
+
+
+or (prot_orgkey like concat(seqid,"%")
+and ( seqid=prot_seqname or seqid=prot_tailkey 	or prot_seqname like concat( "%", seqid, "%") ))
+
+SELECT blast_sseq_id,blast_qseq_id,blast_pident, blast_qseq_jg1, blast_sseq_jg1 ,
+(blast_qend-blast_qstart)/blast_qlen*100 as qcov, (blast_send-blast_sstart)/blast_slen*100 as scov
+FROM `tmp` WHERE `blast_qseq_jg1` LIKE 'Aspnov1' OR `blast_sseq_jg1` LIKE 'Aspnov1'
+ORDER BY `tmp`.`blast_pident` ASC
+
+for s in range(0,len(strains)):
+	strain_string += "blast_qseq_jg1 = \'" + strains[s] + "\' or blast_sseq_jg1 = \'" + strains[s] + "\'"
+	if s != len(strains)-1:
+		strain_string += " or "
+
+
+for i in range(0,len(genes)):
+	gene_string += "blast_qseq_id like \'%" + genes[i] + "%\' or blast_sseq_id like \'%" + genes[i] + "%\'"
+	if i != len(genes)-1:
+		gene_string += " or "
+
 
 SELECT r.blast_sseq_id,r.blast_qseq_id,r.blast_pident, r.blast_qseq_jg1, r.blast_sseq_jg1, 
 (r.blast_qend-r.blast_qstart)/r.blast_qlen*100 as qcov, (r.blast_send-r.blast_sstart)/r.blast_slen*100 as scov

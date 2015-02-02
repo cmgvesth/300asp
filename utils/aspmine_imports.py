@@ -24,3 +24,4 @@ from utilsFileOperations import *
 
 import warnings
 warnings.filterwarnings("ignore", "Unknown table.*")
+warnings.filterwarnings("ignore", "Data truncated.*")
