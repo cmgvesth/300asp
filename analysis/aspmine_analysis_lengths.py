@@ -25,8 +25,8 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 parser.add_argument("-out", "-o", required=False, default = "lengths.csv", help="Name of output file")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-sec", required=False, help="Section name")
-parser.add_argument("-plot", "-p", action='store_true', required=False, help="Create plot")
-parser.add_argument("-tab", "-t", action='store_true', required=False, help="Create table")
+parser.add_argument("-plot", "-p", required=False, action='store_true', help="Create plot")
+parser.add_argument("-tab", "-t", required=False, action='store_true', help="Create table new or use existing tmp")
 parser.add_argument("-R", default="aspmine_analysis_lengths.R", required=False, help="Name of R script, default aspmine_analysis_lengths.R")
 
 #parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')
@@ -123,12 +123,12 @@ def make_plot(outfile):
 	os.system("R CMD BATCH '--args %s' aspmine_analysis_lengths.R test.out " % outfile)
 
 
-if table=="y":
+if table:
 	make_table(outfile)
-	if plot=="y":
+	if plot:
 		make_plot(outfile)
 
-if table=="n" and plot=="y":
+if table and plot :
 	make_plot(outfile)
 
 
