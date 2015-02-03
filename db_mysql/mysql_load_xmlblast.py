@@ -58,11 +58,10 @@ if not cursor.execute("SHOW TABLES LIKE 'map_niger' ;"):
 	cursor.execute("CREATE TABLE map_niger ( 		\
 	aln_span INT(11), \
 	alphabet VARCHAR(11), \
-	bitscore FLOAT, \
-	bitscore_raw FLOAT, \
+	bitscore DECIMAL(10,2), \
+	bitscore_raw DECIMAL(10,2), \
 	evalue FLOAT, \
 	gap_num INT(11), \
-	hit_description VARCHAR(100), \
 	hit_end INT(11), \
 	hit_frame VARCHAR(11), \
 	hit_id VARCHAR(100), \
@@ -73,7 +72,6 @@ if not cursor.execute("SHOW TABLES LIKE 'map_niger' ;"):
 	ident_num INT(11), \
 	is_fragmented VARCHAR(11), \
 	pos_num INT(11), \
-	query_description VARCHAR(100), \
 	query_end INT(11), \
 	query_frame VARCHAR(11), \
 	query_id VARCHAR(100), \
@@ -81,45 +79,52 @@ if not cursor.execute("SHOW TABLES LIKE 'map_niger' ;"):
 	query_span INT(11), \
 	query_start INT(11), \
 	query_strand INT(11), \
-	pident FLOAT \
+	pident DECIMAL(10,2) \
 	)")
-	curser.commit()
+	cursor.commit()
 
 counter = 0
 totalcounter = 0
 insert_values = []
 
-for item in SearchIO.parse(blast, 'blast-xml'): #NCBIXML.parse(result):
+records = SearchIO.parse(blast, 'blast-xml')
+
+for item in records: #NCBIXML.parse(result):
 	for hsp in item.hsps:
-		counter += 1
 
-		pident = hsp.ident_num / hsp.aln_span * 100
+		pident = (float(hsp.ident_num) / float(hsp.aln_span)) * 100
 		values = (	hsp.aln_span, hsp.alphabet, hsp.bitscore, hsp.bitscore_raw, hsp.evalue, hsp.gap_num, \
-					hsp.hit_description, hsp.hit_end, hsp.hit_frame, hsp.hit_id, hsp.hit_range,  \
-					hsp.hit_span, hsp.hit_start, hsp.hit_strand, hsp.ident_num, hsp.is_fragmented, hsp.pos_num,hsp.query_description, hsp.query_end, \
-					hsp.query_frame, hsp.query_id, hsp.query_range, hsp.query_span, hsp.query_start,hsp.query_strand, pident)
+					hsp.hit_end, hsp.hit_frame, hsp.hit_id, str(hsp.hit_range),  \
+					hsp.hit_span, hsp.hit_start, hsp.hit_strand, hsp.ident_num, hsp.is_fragmented, hsp.pos_num, hsp.query_end, \
+					hsp.query_frame, hsp.query_id, str(hsp.query_range), hsp.query_span, hsp.query_start,hsp.query_strand, pident)
+		valuenames = "aln_span, alphabet, bitscore, bitscore_raw, evalue, gap_num, \
+					hit_end, hit_frame, hit_id, hit_range,  \
+					hit_span, hit_start, hit_strand, ident_num, is_fragmented, pos_num, query_end, \
+					query_frame, query_id, query_range, query_span, query_start,query_strand, pident"
 
-		counter_threshold = 1000
-		if ( counter == counter_threshold or totalcounter == len(records)):
-			if totalcounter % 3000 == 0  or totalcounter == len(records) : print "# INFO: Inserting record number %s" % totalcounter
+		query = "REPLACE INTO map_niger (%s) VALUES (%s)" % (valuenames, ("%s," * len(values)).rstrip(","))
+		insert_values.append(values)
+		counter_threshold = 100
+
+		
+		if ( counter == counter_threshold):
+			if totalcounter % 3000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
 
 			try:	
-				db = mdb.connect("localhost","asp","1234",dbname)
-				cursor = db.cursor()
-				cursor.executemany(query,insert_values)
+				cursor.executemany(query, insert_values)
 				
 				# add the changes to the db, close the db connection 
 				db.commit() 
-				db.close()	
 				
 				# reset counter and values to insert ------------------------------------
 				counter = 0 
 				insert_values = []
 
 			except mdb.Error, e:
-				sys.exit( "# ERROR utils %s %d: %s" % (filetype, e.args[0],e.args[1]))		
-	sys.exit()
-
+				sys.exit( "# ERROR xmlblast %d: %s" % (e.args[0],e.args[1]))	
+		
+		counter += 1
+		totalcounter += 1
 """
 hsp.aln, hsp.aln_all, hsp.aln_annotation, hsp.aln_annotation_all, hsp.aln_span, 
 hsp.alphabet, hsp.bitscore, hsp.bitscore_raw, hsp.evalue, hsp.fragment, hsp.fragments, hsp.gap_num, 
