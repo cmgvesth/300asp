@@ -6,12 +6,17 @@
 '''##################################################################
 # Imports
 ##################################################################'''
-import sys 
+import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
 from aspmine_imports import *
 
 """
 CODEBOOK INFO:
+
+for x in $(locate *Asphet1*_sm.txt)
+do
+python  python /home/tcve/github/db_mysql/mysql_antismash_load.py -filetype anti -action load -source $x
+done
 
 for x in *sm.txt
 do
@@ -127,6 +132,7 @@ counter = 0
 totalcounter = 0
 cluster_flag = 0
 org_id = ""
+filename = args.source.split("/")[-1]
 
 for line in file_lines:
 	totalcounter += 1
@@ -159,7 +165,7 @@ for line in file_lines:
 			cluster_flag = 0
 
 		if not org_id:
-			org_key = args.source.split("_sm")[0]
+			org_key = filename.split("_sm.txt")[0]
 			cursor.execute( "SELECT org_id FROM organism where name LIKE '%s' " % org_key )
 			org_id = cursor.fetchall()
 			
