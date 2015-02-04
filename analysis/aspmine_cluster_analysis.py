@@ -1,27 +1,11 @@
 #!/usr/bin/python
 
-#------------------------------------------------------------------
+'''##################################################################
 # Imports
-#------------------------------------------------------------------
-import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os, gzip
-from datetime import datetime
-
-''' bio python '''
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
-
-''' math '''
-import csv
-
-''' local libs '''
-sys.path.append('/home/tcve/github/utils/')
-from utilsArgparse import * # custom functions
-
-import warnings
-warnings.filterwarnings("ignore", "Unknown table.*")
+##################################################################'''
+import sys 
+sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
+from aspmine_imports import *
 
 ##############################################################################################################################################
 ##############################################################################################################################################

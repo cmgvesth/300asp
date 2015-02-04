@@ -312,7 +312,9 @@ def parse_IPR_annotation_line(line):
 	# Add value line as annotation		
 	else:
 		annotations.append( tuple(tab_fields[0:]) )
-	#annotations = [ k.replace(";", "") for k in annotations]	
+	#annotations = [ k.replace(";", "") for k in annotations]
+	#print annotations
+	#sys.exit()	
 	return annotations
 			
 #######################################################################
@@ -375,7 +377,7 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 	for r in records:
 		counter += 1
 		totalcounter += 1
-		valuedict["org_id"] = (org_id,)
+		valuedict["org_id"] = (str(org_id),)
 
 		# Function to deal with multi value tab fields (protein_id 	valueA | valueB)
 		if 		name == "GO": 		annotations = parse_GO_annotation_line(r)
@@ -387,8 +389,8 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 			for annotation in annotations:
 				for key in line_values:
 					valuedict[key] = (annotation[line_values.index(key)],) 
-		elif name == "GFF":
 
+		elif name == "GFF":
 			for key in line_values:
 				#print key, line_values.index(key)
 
@@ -404,14 +406,11 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 					continue	
 
 				valuedict[key] = (annotations[line_values.index(key)],) 
-				#if re.search("transcriptId", line_values["gff_attributes"]): 
-				#	valuedict["gff_trans_id"] = (annotations[line_values["gff_seq_id"]],)
 
 		else:			
 			for key in line_values:
 				valuedict[key] = (annotations[line_values.index(key)],) 
-		#print valuedict		
-		#sys.exit()		
+
 		# Main annotation table - not organism specific, no org or protein information	
 		# Clear the values list and sort valuedict by the given value line
 		# Add each value to a list and add each list to the insert list
@@ -434,14 +433,16 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 				print "# INFO: Inserting record number %s" % totalcounter
 			elif totalcounter % 2000 == 0 and print_flag == 0: 
 				print_flag = 1
-				print "# INFO: Inserting record number %s" % totalcounter
+				print "# INFO: Inserting record number %s " % totalcounter
 			elif totalcounter == len(records): print "# INFO: Inserting record number %s" % totalcounter
 						
 			try:	
+
 				db = mdb.connect("localhost","asp","1234",dbname)
 				cursor = db.cursor()
-				cursor.executemany(main_insertQuery,	main_insert_values)
+				cursor.executemany(main_insertQuery, main_insert_values)
 				if name != "GFF":
+					#print connect_insert_values[0], name
 					cursor.executemany(connect_insertQuery,	connect_insert_values)
 
 				# add the changes to the db, close the db connection 
@@ -456,7 +457,7 @@ def load_tab_files(name, nrtab, main_values, connect_values, line_values, main_i
 			except mdb.Error, e:
 				print "# ERROR: %s" % str(main_insert_values[0])
 				sys.exit( "# ERROR utils %s %d: %s" % (name, e.args[0],e.args[1]))
-
+			#print cursor._last_executed
 	# If user is only testing or has chosen verbose mode - print example variable values ------------------------------------			
 	if action == "test":
 		print "# Query: %s\n# Values: %s" % (main_insertQuery,main_insert_values[0])		
@@ -481,8 +482,8 @@ def go (org_name,filepath, action, dbname):
 	main_values 	= ["go_term_id", "go_name", "go_termtype", "go_acc"]
 	connect_values 	= ["org_id", "protein_id", "go_term_id"]
 
-	main_insertQuery 	= "REPLACE INTO go (go_term_id, go_name, go_termtype, go_acc) values(%s);" % ("%s," * len(main_values)).rstrip(",")
-	connect_insertQuery = "REPLACE INTO protein_has_go (org_id, protein_id, go_term_id ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
+	main_insertQuery 	= "INSERT IGNORE INTO go (go_term_id, go_name, go_termtype, go_acc) values(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "INSERT IGNORE INTO protein_has_go (org_id, protein_id, go_term_id ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
 
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, \
 		main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
@@ -516,8 +517,8 @@ def ipr (org_name,filepath, action, dbname):
 	main_values 	= ["ipr_id", "desc", "domaindb", "domain_id", "domaindesc"]
 	connect_values 	= ["org_id", "protein_id", "ipr_id", "domain_starts", "domain_ends", "score"]
 	
-	main_insertQuery 	= "REPLACE INTO ipr (ipr_id, ipr_desc, ipr_domaindb, ipr_domain_id, ipr_domaindesc) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
-	connect_insertQuery = "REPLACE INTO protein_has_ipr (org_id, protein_id, ipr_id, ipr_domain_start, ipr_domain_end, ipr_score ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
+	main_insertQuery 	= "INSERT IGNORE INTO ipr (ipr_id, ipr_desc, ipr_domaindb, ipr_domain_id, ipr_domaindesc) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "INSERT IGNORE INTO protein_has_ipr (org_id, protein_id, ipr_id, ipr_domain_start, ipr_domain_end, ipr_score ) values(%s);" % ("%s," * len(connect_values)).rstrip(",")
 
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 	return org_id
@@ -541,8 +542,8 @@ def kegg (org_name,filepath, action, dbname):
 	connect_values 	= ["org_id", "protein_id", "ecNum", "pathway","ecNum", "pathway"]
 
 
-	main_insertQuery = "REPLACE INTO kegg (kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
-	connect_insertQuery = "REPLACE INTO protein_has_kegg (org_id, protein_id, kegg_ecNum, kegg_pathway, kegg_id ) values(%s,%s,%s,%s, (SELECT kegg_id from kegg where kegg_ecNum=%s and kegg_pathway=%s));"
+	main_insertQuery 	= "INSERT IGNORE INTO kegg (kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "INSERT IGNORE INTO protein_has_kegg (org_id, protein_id, kegg_ecNum, kegg_pathway, kegg_id ) values(%s,%s,%s,%s, (SELECT kegg_id from kegg where kegg_ecNum=%s and kegg_pathway=%s));"
 
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 	return org_id
@@ -563,8 +564,8 @@ def kog (org_name,filepath, action, dbname):
 	main_values 	= ["kog_id", "kogdefline", "class", "group"]
 	connect_values 	= ["org_id", "protein_id", "kog_id"]
 
-	main_insertQuery = "REPLACE INTO kog (kog_id, kog_defline, kog_Class, kog_Group) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
-	connect_insertQuery = "REPLACE INTO protein_has_kog (org_id, protein_id, kog_id) VALUES(%s);" % ("%s," * len(connect_values)).rstrip(",")
+	main_insertQuery	= "INSERT IGNORE INTO kog (kog_id, kog_defline, kog_Class, kog_Group) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	connect_insertQuery = "INSERT IGNORE INTO protein_has_kog (org_id, protein_id, kog_id) VALUES(%s);" % ("%s," * len(connect_values)).rstrip(",")
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 	return org_id
 
@@ -584,7 +585,7 @@ def sigp (org_name,filepath, action, dbname):
 	main_values 	= ["org_id", "protein_id", "nn_cutpos", "neuro_net_vote", "hmm_cutpos", "hmm_signalpep_probability"]
 	connect_values 	= []
 	
-	main_insertQuery 	= "REPLACE INTO sigp (org_id, protein_id, sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	main_insertQuery 	= "INSERT IGNORE INTO sigp (org_id, protein_id, sigp_nn_cutpos, sigp_neuro_net_vote, sigp_hmm_cutpos, sigp_hmm_signalpep_probability) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
 	connect_insertQuery = "SELECT sigp_nn_cutpos from sigp limit 1"
 
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
@@ -610,7 +611,7 @@ def gff (org_name,filepath, action, dbname):
 	main_values 	= ["gff_seqorigin", "gff_type", "gff_start", "gff_end", "gff_score", "gff_strand", "gff_phase", "gff_attributes", "org_id", "gff_protein_id", "gff_trans_id" ,"gff_exonnr","gff_name"]
 	connect_values 	= []
 
-	main_insertQuery = "REPLACE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_protein_id, gff_trans_id, gff_exonnr, gff_name) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	main_insertQuery 	= "INSERT IGNORE INTO gff(gff_seqorigin, gff_type, gff_start, gff_end, gff_score, gff_strand, gff_phase, gff_attributes,org_id, gff_protein_id, gff_trans_id, gff_exonnr, gff_name) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
 	connect_insertQuery = "SELECT gff_seqorigin from gff limit 1"
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
 	return org_id

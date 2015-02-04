@@ -3,13 +3,13 @@
 #------------------------------------------------------------------
 # Imports
 #------------------------------------------------------------------
-import MySQLdb as mdb
-import sys, getopt, argparse, re, glob, os
-import gzip
-from Bio import SeqIO
-from Bio.Alphabet import IUPAC
-from Bio.SeqRecord import SeqRecord
-from Bio.Seq import Seq
+'''##################################################################
+# Imports
+##################################################################'''
+import sys 
+sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
+from aspmine_imports import *
+
 """
 CODEBOOK INFO:
 
