@@ -25,3 +25,6 @@ from utilsFileOperations import *
 import warnings
 warnings.filterwarnings("ignore", "Unknown table.*")
 warnings.filterwarnings("ignore", "Data truncated.*")
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/util_snip"))
+
