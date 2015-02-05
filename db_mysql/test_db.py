@@ -36,19 +36,28 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter,
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
 # At least one file filetype must be provided, or the option "all" which expects a JGI directory format
+# klara: 192.38.13.9
 #------------------------------------------------------------------
-parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="R|Database name")
-parser.add_argument("-host", required=False, default = "localhost", help="R|Database host IP")
+parser.add_argument("-dbname", "-d", required=True, help="R|Database name")
+parser.add_argument("-host", required=True,  help="R|Database host IP")
+parser.add_argument("-user", required=True, help="R|Database username")
+parser.add_argument("-password", "-p", required=True, help="R|Database password")
 
 args = parser.parse_args()
 host = args.host
-db = args.dbname
+dbname = args.dbname
+password = args.password
+user = args.user
 
 #------------------------------------------------------------------
 # Print argument values to screen
 #------------------------------------------------------------------
 print "#--------------------------------------------------------------"
-print "# ARGUMENTS :\n# Database\t:%s\n# Host\t:%s" % (args.dbname, args.host)
+print "# ARGUMENTS :\n\
+# Database\t:%s\n\
+# Host\t\t:%s\n\
+# Password\t:%s\n\
+# Username\t:%s" % (dbname, host, password, user)
 print "#--------------------------------------------------------------"
 
 #------------------------------------------------------------------
@@ -57,10 +66,11 @@ print "#--------------------------------------------------------------"
 
 def database( db, host ) :
 	try:
-	    db = mdb.connect(host,"asp","1234",db)
+	    db = mdb.connect(host,"asp","1234",dbname)
+
 	    print "# INFO: success connectiong to existing database %s" % dbname
 
 	except mdb.Error, e:
 		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
-database( str(db), str(host) )
+database( str(dbname), str(host) )
