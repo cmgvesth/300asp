@@ -29,10 +29,9 @@ startTime = datetime.now() # record runtime
 # Get command line arguments
 #------------------------------------------------------------------
 parser = CustomArgumentParser(formatter_class=SmartFormatter, 
-								description="Load data into local mysql database", 
-								 usage='%(prog)s -dbname [databasename] \n'
-								 "Example: python %(prog)s -dbname aspminedb\n"
-								 "Example: python %(prog)s -dbname aspminedb")
+								description="Test connection to mysql database", 
+								 usage='%(prog)s -dbname [databasename] -user [mysql username] -p [Mysql password] -d [mysql databasename]\n'
+								 "Example: python %(prog)s -host 192.38.13.9 -user asp -password 1234 -d aspminedb")
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
 # At least one file filetype must be provided, or the option "all" which expects a JGI directory format
