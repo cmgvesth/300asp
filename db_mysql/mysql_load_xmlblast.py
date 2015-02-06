@@ -55,33 +55,39 @@ from Bio import SearchIO
 
 if not cursor.execute("SHOW TABLES LIKE 'map_niger' ;"):
 	print "# Creating table map_niger"
-	cursor.execute("CREATE TABLE map_niger ( 		\
-	aln_span INT(11), \
-	alphabet VARCHAR(11), \
-	bitscore DECIMAL(10,2), \
-	bitscore_raw DECIMAL(10,2), \
-	evalue FLOAT, \
-	gap_num INT(11), \
-	hit_end INT(11), \
-	hit_frame VARCHAR(11), \
-	hit_id VARCHAR(100), \
-	hit_range VARCHAR(11), \
-	hit_span INT(11), \
-	hit_start INT(11), \
-	hit_strand INT(11), \
-	ident_num INT(11), \
-	is_fragmented VARCHAR(11), \
-	pos_num INT(11), \
-	query_end INT(11), \
-	query_frame VARCHAR(11), \
-	query_id VARCHAR(100), \
-	query_range VARCHAR(11), \
-	query_span INT(11), \
-	query_start INT(11), \
-	query_strand INT(11), \
-	pident DECIMAL(10,2) \
-	)")
-	cursor.commit()
+	cursor.execute("CREATE TABLE IF NOT EXISTS `map_niger` (\
+  `filename` varchar(50) DEFAULT NULL, \
+  `hit_id` varchar(100) DEFAULT NULL,\
+  `hit_org` varchar(100) DEFAULT NULL,\
+  `query_id` varchar(100) DEFAULT NULL,\
+  `query_org` varchar(100) DEFAULT NULL,\
+  `query_range` varchar(11) DEFAULT NULL,\
+  `hit_range` varchar(11) DEFAULT NULL,\
+  `aln_span` int(11) DEFAULT NULL,\
+  `alphabet` varchar(11) DEFAULT NULL,\
+  `bitscore` decimal(10,2) DEFAULT NULL,\
+  `bitscore_raw` decimal(10,2) DEFAULT NULL,\
+  `evalue` varchar(11) DEFAULT NULL,\
+  `gap_num` int(11) DEFAULT NULL,\
+  `hit_end` int(11) DEFAULT NULL,\
+  `hit_frame` varchar(11) DEFAULT NULL,\
+  `hit_span` int(11) DEFAULT NULL,\
+  `hit_start` int(11) DEFAULT NULL,\
+  `hit_strand` int(11) DEFAULT NULL,\
+  `ident_num` int(11) DEFAULT NULL,\
+  `is_fragmented` varchar(11) DEFAULT NULL,\
+  `pos_num` int(11) DEFAULT NULL,\
+  `query_end` int(11) DEFAULT NULL,\
+  `query_frame` varchar(11) DEFAULT NULL,\
+  `query_span` int(11) DEFAULT NULL,\
+  `query_start` int(11) DEFAULT NULL,\
+  `query_strand` int(11) DEFAULT NULL,\
+  `pident` decimal(10,2) DEFAULT NULL,\
+  UNIQUE KEY `filename` (`filename`,`hit_id`,`query_id`,`bitscore_raw`,`pident`),\
+  KEY `hit_id` (`hit_id`),\
+  KEY `query_id` (`query_id`)\
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;")
+	db.commit()
 
 counter = 0
 totalcounter = 0
@@ -91,16 +97,21 @@ records = SearchIO.parse(blast, 'blast-xml')
 
 for item in records: #NCBIXML.parse(result):
 	for hsp in item.hsps:
+		#print hsp.evalue 
+		#sys.exit()
+		filename = (blast.split("/")[-1]).replace(".txt", "")
+		qorg = filename.split("_")[0]
+		sorg = filename.split("_")[-1]
 
 		pident = (float(hsp.ident_num) / float(hsp.aln_span)) * 100
-		values = (	hsp.aln_span, hsp.alphabet, hsp.bitscore, hsp.bitscore_raw, hsp.evalue, hsp.gap_num, \
+		values = (	filename, hsp.aln_span, hsp.alphabet, hsp.bitscore, hsp.bitscore_raw, hsp.evalue, hsp.gap_num, \
 					hsp.hit_end, hsp.hit_frame, hsp.hit_id, str(hsp.hit_range),  \
 					hsp.hit_span, hsp.hit_start, hsp.hit_strand, hsp.ident_num, hsp.is_fragmented, hsp.pos_num, hsp.query_end, \
-					hsp.query_frame, hsp.query_id, str(hsp.query_range), hsp.query_span, hsp.query_start,hsp.query_strand, pident)
-		valuenames = "aln_span, alphabet, bitscore, bitscore_raw, evalue, gap_num, \
+					hsp.query_frame, hsp.query_id, str(hsp.query_range), hsp.query_span, hsp.query_start,hsp.query_strand, pident, qorg, sorg)
+		valuenames = "filename, aln_span, alphabet, bitscore, bitscore_raw, evalue, gap_num, \
 					hit_end, hit_frame, hit_id, hit_range,  \
 					hit_span, hit_start, hit_strand, ident_num, is_fragmented, pos_num, query_end, \
-					query_frame, query_id, query_range, query_span, query_start,query_strand, pident"
+					query_frame, query_id, query_range, query_span, query_start,query_strand, pident, query_org, hit_org"
 
 		query = "REPLACE INTO map_niger (%s) VALUES (%s)" % (valuenames, ("%s," * len(values)).rstrip(","))
 		insert_values.append(values)
@@ -125,6 +136,18 @@ for item in records: #NCBIXML.parse(result):
 		
 		counter += 1
 		totalcounter += 1
+
+"""
+select * from (
+select query_id, query_org, 
+case when hit_org = "Aniger1" then hit_id end as Aniger1, 
+case when hit_org = "Aniger3" then hit_id end as Aniger3, 
+case when hit_org = "Aniger7" then hit_id end as Aniger7 
+from map_niger) as mapA
+group by query_id;
+
+"""
+
 """
 hsp.aln, hsp.aln_all, hsp.aln_annotation, hsp.aln_annotation_all, hsp.aln_span, 
 hsp.alphabet, hsp.bitscore, hsp.bitscore_raw, hsp.evalue, hsp.fragment, hsp.fragments, hsp.gap_num, 

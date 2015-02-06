@@ -25,8 +25,9 @@ parser.add_argument('-action' , "-a", required=True, default = "test", choices=[
 '''##################################################################
 # Imports
 ##################################################################'''
-import sys 
-from aspmine_imports import *
+import getopt, argparse, re, glob, os, gzip, sys
+
+#from aspmine_imports import *
 
 #######################################################################
 # Format argument helper
