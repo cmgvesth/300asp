@@ -1,9 +1,15 @@
+<<<<<<< HEAD
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
 from aspmine_imports import *
 #print sys.path
 #sys.exit()
 
+=======
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
+from aspmine_imports import *
+>>>>>>> eada0d9d954c2b226b36289da68c5a6903cd01a1
 # another tool for making tables in python :from prettytable import from_db_cursor
 #------------------------------------------------------------------
 ''' Get command line arguments '''
@@ -91,6 +97,7 @@ def make_table():
 		sys.exit('Counting of events failed')
 
 	result="Sorry no have"
+
 	print "Evaluating differences in coverage"
 	try:
 		query = "CREATE TABLE testNidCovDif AS (SELECT pct_shortCov-pct_longCov as CovDif FROM testNidBiHits)"
@@ -100,7 +107,13 @@ def make_table():
 	except mdb.Error, e:
 		sys.exit('Failed to create table with Coverage differences')
 
-	result = cursor.fetchall()
+	try:
+		query = "SELECT * FROM testNidCovDif"
+		cursor.execute(query)
+		result = cursor.fetchall()
+	except:
+		print "Cannot fetch data from testNidCovDif table"
+	
 # SELECT (SELECT COUNT(*) FROM testNidBiHits WHERE pct_longCov > 80) as new WORKING!!!
 #	db_cur.execute("SELECT * FROM counting")
 #	pt = from_db_cursor(db_cur)
@@ -125,4 +138,8 @@ def make_table():
 		except mdb.Error, e:
 			sys.exit('Fetching first table entries failed')''' # Implement this in later versions
 
+<<<<<<< HEAD
 make_table()			
+=======
+make_table()
+>>>>>>> eada0d9d954c2b226b36289da68c5a6903cd01a1
