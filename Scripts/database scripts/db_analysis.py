@@ -1,5 +1,9 @@
-from asp_imports import *
-import sys
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
+from aspmine_imports import *
+#print sys.path
+#sys.exit()
+
 # another tool for making tables in python :from prettytable import from_db_cursor
 #------------------------------------------------------------------
 ''' Get command line arguments '''
@@ -23,6 +27,7 @@ rscript = args.R
 outfile = args.out"""
 
 #import MySQLdb as mdb 
+
 
 def make_table():
 	outfile = 'newone.csv'
@@ -89,7 +94,7 @@ def make_table():
 	print "Evaluating differences in coverage"
 	try:
 		query = "CREATE TABLE testNidCovDif AS (SELECT pct_shortCov-pct_longCov as CovDif FROM testNidBiHits)"
-		cursor.execute("drop table IF EXISTS testNidCovDif ;")
+		#cursor.execute("drop table IF EXISTS testNidCovDif ;")
 		cursor.execute(query)
 	
 	except mdb.Error, e:
@@ -119,3 +124,5 @@ def make_table():
 			print "Structure of initial_screening table \n %s" %cursor.fetchone()
 		except mdb.Error, e:
 			sys.exit('Fetching first table entries failed')''' # Implement this in later versions
+
+make_table()			
