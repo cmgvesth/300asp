@@ -13,7 +13,6 @@ organism_Dict = dict()
 
 # Connecting to database
 db = MySQLdb.connect(host="192.38.13.9",user="mr",passwd="1234",db="aspminedb" )
-# db = MySQLdb.connect(host="192.38.13.9",user="mr",passwd="1234",db="testasp" )
 cursor = db.cursor()
 
 # Build a JGI_name-to-org_id dictionary
@@ -109,7 +108,7 @@ for Cluster in UniqueClusters:
 		# print ClusterNames_Set
 		for key in ClusterNames_Set:
 			ClusterCounting_dict[key] = 0
-		# Untested 
+		# Untested from here on, pending rebuild of BLAST table
 		for n in range(len(ExpandedClusterSet)):
 			if ExpandedClusterSet[n][3] is not 'None':
 				ClusterCounting_dict[ExpandedClusterSet[n][3]] = ClusterCounting_dict[ExpandedClusterSet[n][3]] + 1
@@ -118,19 +117,7 @@ for Cluster in UniqueClusters:
 			# 5. Write results to dataframe based on Query_Cluster versus Hit_Cluster
 			Results_df.loc[str(ExpandedClusterSet[0][0]),str(keys)] =  ClusterCounting_dict[keys]
 		
-
-
-
-
-
 db.close()
-
-
-# Saving values to dataframe
-# Results_df.loc['22_1085888_11','22_1085888_11'] = 4
-
-
-
 
 Results_df.to_csv('Results.csv')
 
