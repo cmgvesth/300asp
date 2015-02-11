@@ -1,48 +1,33 @@
-<<<<<<< HEAD
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
 from aspmine_imports import *
-#print sys.path
-#sys.exit()
 
-=======
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
-from aspmine_imports import *
->>>>>>> eada0d9d954c2b226b36289da68c5a6903cd01a1
-# another tool for making tables in python :from prettytable import from_db_cursor
 #------------------------------------------------------------------
 ''' Get command line arguments '''
 #------------------------------------------------------------------
-"""parser = CustomArgumentParser(formatter_class=SmartFormatter, 
-								description="Create protein length tale and plots", 
-								 usage='%(prog)s -out filename -dbname [database name] -sec [taxonimic section] -plot [draw plots n/y] -tab [create table n/y] -R [name of R script]\n'
-								 "Example: python %(prog)s -dbname aspminedb -plot y -tab n -out length.csv [uses existing datafile]")
-#parser.add_argument("-limit", "-l", required=False, default = 100, help="limit length selects, dafault 100, to select all set to 'all' ")
-parser.add_argument("-plot", "-p", required=False, action='store_true', help="Create plot")
-
-# TO DO: Implement test flag here! AND Limit flag
-
-#parser.add_argument("-verbose", "-v", required=False, help="R|Increase output verbosity for bug tracking" , action='store_true')
-
-args 	= parser.parse_args()
-section = args.sec
-plot 	= args.plot
-table 	= args.tab
-rscript = args.R
-outfile = args.out"""
-
-#import MySQLdb as mdb 
+parser = argparse.ArgumentParser(description="Preprocessing databases for gene clustering", usage="%(prog)s -out filename")
+parser.add_argument("--test","-t", required=False, action="store_true", help="Enables testing mode")
+parser.add_argument("--out", "-o", required=False, default = "initial.csv", help="Name of output file")
+parser.add_argument("--limit", "-lim", required=False, help="Limit of entries to process in Mysql")
+parser.add_argument("--user", "-u", type = str, choices=["setd", "jlnr"], required=True, help="Specify user")
 
 
-def make_table():
+
+args = parser.parse_args()
+test = args.test
+outfile = args.out
+user = args.user
+
+
+
+def make_table(outfile):
 	outfile = 'newone.csv'
-	print "# INFO: creating table"
+	
 #------------------------------------------------------------------
 # Connect to specific DB
 #------------------------------------------------------------------
 	try:
-		db = mdb.connect(host="192.38.13.9", user="setd",passwd="1234",db="testasp")
+		db = mdb.connect(host="192.38.13.9", user ,passwd="1234",db="testasp")
 	except mdb.Error, e:
 		sys.exit("Cannot connect to database")#"# ERROR %d: %s" % (e.args[0],e.args[1]))
 	try:
@@ -72,6 +57,7 @@ def make_table():
 		print "Created table consists of %r rows" % counter
 	except mdb.Error, e:
 			sys.exit('Fetching row count failed')
+
 # This query needs to be rewritten, when mysql is running again
 
 	try:
@@ -138,8 +124,5 @@ def make_table():
 		except mdb.Error, e:
 			sys.exit('Fetching first table entries failed')''' # Implement this in later versions
 
-<<<<<<< HEAD
 make_table()			
-=======
-make_table()
->>>>>>> eada0d9d954c2b226b36289da68c5a6903cd01a1
+
