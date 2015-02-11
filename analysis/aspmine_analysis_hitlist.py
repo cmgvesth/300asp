@@ -13,13 +13,13 @@ from aspmine_imports import *
 startTime = datetime.now() # record runtime
 parser = CustomArgumentParser(formatter_class=SmartFormatter, 
 								description="Get best hits from specific gene name or ID", 
-								 usage='%(prog)s -dbname [database name] -out [output filename] -gene [JGI gene name or ID] -strain [JGI organism keys] \n'
+								 usage='%(prog)s -dbname [database name] -out [output filename] -gene [JGI gene name or ID] -strain [JGI organism key] \n'
 								 "Example: python %(prog)s -dbname aspminedb -out hitlist.csv -gene An15g00560 -strain Aspni_DSM_1")
 parser.add_argument("-out", "-o", required=False, default = "hitlist.csv", help="Name of output file, default hitlist.csv")
 parser.add_argument("-tab", "-t", required=False, action='store_true', help="Create table new or use existing tmp")
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
-parser.add_argument("-strain", "-s", required=True, default=[None], action='store', help="JGI organism keys")
-parser.add_argument("-gene", "-g",  required=True, default=[None], action='store', help="List of gene ID or name")
+parser.add_argument("-strain", "-s", required=True, default=[None], action='store', help="JGI organism key")
+parser.add_argument("-gene", "-g",  required=True, default=[None], action='store', help="Gene ID or name")
 
 args 	= parser.parse_args()
 gene 	= args.gene

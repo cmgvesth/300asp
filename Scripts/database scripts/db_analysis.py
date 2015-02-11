@@ -1,4 +1,4 @@
-import sys, os
+import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
 from aspmine_imports import *
 
@@ -19,7 +19,8 @@ outfile = args.out
 user = args.user
 
 
-def make_table():
+
+def make_table(outfile):
 	outfile = 'newone.csv'
 	
 #------------------------------------------------------------------
@@ -86,7 +87,7 @@ def make_table():
 	print "Evaluating differences in coverage"
 	try:
 		query = "CREATE TABLE testNidCovDif AS (SELECT pct_shortCov-pct_longCov as CovDif FROM testNidBiHits)"
-		cursor.execute("drop table IF EXISTS testNidCovDif ;")
+		#cursor.execute("drop table IF EXISTS testNidCovDif ;")
 		cursor.execute(query)
 	
 	except mdb.Error, e:
@@ -123,4 +124,5 @@ def make_table():
 		except mdb.Error, e:
 			sys.exit('Fetching first table entries failed')''' # Implement this in later versions
 
-make_table()
+make_table()			
+
