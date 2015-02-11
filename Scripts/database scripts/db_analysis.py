@@ -6,10 +6,10 @@ from aspmine_imports import *
 ''' Get command line arguments '''
 #------------------------------------------------------------------
 parser = argparse.ArgumentParser(description="Preprocessing databases for gene clustering", usage="%(prog)s -out filename")
-parser.add_argument("-test","-t", required=False, action="store_true", help="Enables testing mode")
-parser.add_argument("-out", "-o", required=False, default = "initial.csv", help="Name of output file")
-parser.add_argument("-limit", "-lim", required=False, help="Limit of entries to process in Mysql")
-parser.add_argument("-user", "-u", type = str, choices=["setd", "jlnr"], required=True, help="Specify user")
+parser.add_argument("--test","-t", required=False, action="store_true", help="Enables testing mode")
+parser.add_argument("--out", "-o", required=False, default = "initial.csv", help="Name of output file")
+parser.add_argument("--limit", "-lim", required=False, help="Limit of entries to process in Mysql")
+parser.add_argument("--user", "-u", type = str, choices=["setd", "jlnr"], required=True, help="Specify user")
 
 
 
