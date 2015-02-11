@@ -6,7 +6,7 @@
 '''##################################################################
 # Imports
 ##################################################################'''
-import sys 
+import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
 from aspmine_imports import *
 
@@ -89,8 +89,8 @@ parser.add_argument( '-action' , required=False, default = "test", choices=['loa
 #------------------------------------------------------------------
 # At least one file filetype must be provided, or the option "all" which expects a JGI directory format
 #------------------------------------------------------------------
-parser.add_argument( '-filetype' ,	required=True,	help="R|BLAST filetype, files in .txt format.", default = "blast", choices=['blast'],  )
-parser.add_argument( "-source",		required=True,	help="R|File or directoryname, example: -source AacidusVsAindologenusTable.txt" )
+parser.add_argument( '-filetype' ,	required=False,	help="R|BLAST filetype, files in .txt format.", default = "blast", choices=['blast'])
+parser.add_argument( "-source",	"-s",	required=True,	help="R|File or directoryname, example: -source AacidusVsAindologenusTable.txt" )
 parser.add_argument( "-dbname",		required=False,	help="R|Database name", default = "aspminedb" )
 
 args = parser.parse_args()
@@ -172,7 +172,6 @@ for line in file_lines:
 	values = [re.sub( r"^0+", "", i ) for i in values]
 	#print values
 	values_to_insert.append( values ) # Create sets of lists of values
-
 	# Only load data if action is specified
 	if args.action == "load" and ( counter == 500 or totalcounter == len( file_lines ) ):
 		if totalcounter % 1000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
@@ -189,6 +188,8 @@ for line in file_lines:
 		except mdb.Error, e:
 			sys.exit( "# ERROR blast load %s %d: %s" % ( args.source, e.args[0],e.args[1] ) )
 	
+if args.action == "test":
+	print "# INFO: testing file, example values:\n#%s" % values
 	
 print "# FINISHED BLAST file: %s with total number of records %s" % ( args.source , totalcounter )
 

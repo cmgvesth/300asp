@@ -79,9 +79,9 @@ parser.add_argument( '-action' , required=False, default = "test", choices=['loa
 #------------------------------------------------------------------
 # At least one file filetype must be provided, or the option "all" which expects a JGI directory format
 #------------------------------------------------------------------
-parser.add_argument( '-filetype' ,	required=True,	help="R|Antismash JGI filetype, files in .txt format.", default = "anti", choices=['anti'],  )
-parser.add_argument( "-source",		required=True,	help="R|File or directoryname, example: -source Aspzo1_sm.txt" )
-parser.add_argument( "-dbname",		required=False,	help="R|Database name", default = "aspminedb" )
+parser.add_argument( '-filetype', "-f",	required=False,	help="R|Antismash JGI filetype, files in .txt format.", default = "anti", choices=['anti'],  )
+parser.add_argument( "-source",	"-s",	required=True,	help="R|File or directoryname, example: -source Aspzo1_sm.txt" )
+parser.add_argument( "-dbname",	"-d", 	required=False,	help="R|Database name", default = "aspminedb" )
 
 args = parser.parse_args()
 
