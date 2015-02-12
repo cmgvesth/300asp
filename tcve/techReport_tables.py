@@ -118,4 +118,5 @@ if stats:
 	writer.writerow(columns)
 	writer.writerows(result)
 	f.close()
+
 	print "# INFO Runtime genome_statistics: ", (datetime.now()-startTime)

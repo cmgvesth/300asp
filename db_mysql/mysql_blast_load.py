@@ -98,16 +98,20 @@ args = parser.parse_args()
 #------------------------------------------------------------------
 # Print argument values to screen
 #------------------------------------------------------------------
-print "#--------------------------------------------------------------"
-print "# ARGUMENTS :\n# source\t:%s\n# filetype\t:%s\n# action\t:%s\n# Database\t:%s" % ( args.source, args.filetype, args.action, args.dbname )
-print "#--------------------------------------------------------------"
+print "#--------------------------------------------------------------\
+# ARGUMENTS :\n\
+# source\t:%s\n\
+# filetype\t:%s\n\
+# action\t:%s\n\
+# Database\t:%s\
+#--------------------------------------------------------------" % ( args.source, args.filetype, args.action, args.dbname )
 
 #------------------------------------------------------------------
-# Chck connection to database
+# Make connection to database
 #------------------------------------------------------------------
 try:
 	db = mdb.connect( "localhost","asp","1234",str( args.dbname ) )
-	db.close()   
+	cursor = db.cursor()
 except mdb.Error, e:
 	sys.exit( "# ERROR %d: %s" % ( e.args[0],e.args[1] ) )
 
@@ -131,7 +135,6 @@ file_obj.close()
 # Open DB connection
 #------------------------------------------------------------------
 db = mdb.connect( "localhost","asp","1234",str( args.dbname ) )
-cursor = db.cursor()
 
 #------------------------------------------------------------------
 # Get sequence names using BLAST seqids and organism ids
@@ -148,7 +151,8 @@ for line in file_lines:
 
 	# Always check that the file has the format which is expected - runs for each line
 	if not len( line.split( "\t" ) ) == 11:	
-		sys.exit( "# ERROR: lines do not have the right number of elements ( 11 ): qseqid, sseqid, pident, qlen, qstart, qend, slen, sstart, send, evalue, bitscore" )
+		sys.exit( "# ERROR: lines do not have the right number of elements ( 11 ): \
+			qseqid, sseqid, pident, qlen, qstart, qend, slen, sstart, send, evalue, bitscore" )
 
 	( qorg_key, qprotein_key, sorg_key, sprotein_key, search_s, search_q ) = ( "","","","","","" )	# Define variables
 	

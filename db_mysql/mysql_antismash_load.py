@@ -97,7 +97,7 @@ print "#--------------------------------------------------------------"
 #------------------------------------------------------------------
 try:
 	db = mdb.connect( "localhost","asp","1234",str( args.dbname ) )
-	db.close()   
+	cursor = db.cursor()
 except mdb.Error, e:
 	sys.exit( "# ERROR %d: %s" % ( e.args[0],e.args[1] ) )
 
@@ -116,12 +116,6 @@ else:
 file_obj = open( args.source, "r" )
 file_lines = file_obj.readlines()
 file_obj.close()        
-
-#------------------------------------------------------------------
-# Open DB connection
-#------------------------------------------------------------------
-db = mdb.connect( "localhost","asp","1234",str( args.dbname ) )
-cursor = db.cursor()
 
 #------------------------------------------------------------------
 # Get sequence names using BLAST seqids and organism ids
