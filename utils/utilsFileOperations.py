@@ -9,6 +9,7 @@
 import sys 
 from aspmine_imports import *
 
+	
 #######################################################################
 # Decompress TAB files
 # Example use: records = gzip_tab_file(filepath)
@@ -57,18 +58,18 @@ def source_exists(stype, source):
 		if os.path.isfile(source):
 			print "# INFO: file exists: %s" % source 
 		else:
-			sys.exit("# ERROR: file does not exists" )
+			sys.exit("# ERROR: file does not exists: %s" % source  )
 
 	if stype == "dir":
 		# Make sure that the path exists
 		if os.path.exists(source):	print "# INFO: path exists: %s" % source 
-		else:	sys.exit("# ERROR: path does not exists" )
+		else:	sys.exit("# ERROR: path does not exists: %s" % source   )
 		
 		# Loop through all files in directory and check if it is empty
 		for root, subfold, files in os.walk(source):
 			allfiles.append(files)
 			
 		if allfiles == []:
-			sys.exit("# ERROR: directory is empty")
+			sys.exit("# ERROR: directory is empty: %s" % source  )
 	
 				

@@ -67,7 +67,7 @@ for Cluster in UniqueClusters:
 		ExpandedClusterSet = list()
 
 		for n in range(len(ClusterSet)):
-			query = "SELECT blast_qseq_jg2, blast_sseq_jg2, blast_bitscore FROM blast WHERE blast_qseq_jg1 = %s and blast_sseq_jg1 = %s and blast_qseq_jg2 = %s"
+			query = "SELECT q_seqkey, h_seqkey, blast_bitscore FROM blast WHERE q_org = %s and h_org = %s and q_seqkey = %s"
 			cursor.execute(query, (organism_Dict[Organism], organism_Dict[org_id2], ClusterSet[n][1] ) )
 			# 1b. pick best hit
 			# To find the best hit, loop through results and save the single best hit in BestHit_List

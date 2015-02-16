@@ -78,19 +78,19 @@ f.close()
 """
 (strain_string, gene_string) = ("","")
 
-strain_string = "blast_qseq_jg1 = \'" + strain + "\' or blast_sseq_jg1 = \'" + strain + "\'"
-gene_string = "blast_qseq_id like \'%" + gene + "%\' or blast_sseq_id like \'%" + gene + "%\'"
+strain_string = "q_org = \'" + strain + "\' or h_org = \'" + strain + "\'"
+gene_string = "q_seqid like \'%" + gene + "%\' or h_seqid like \'%" + gene + "%\'"
 
 
 
 	for s in range(0,len(strains)):
-		strain_string += " b.blast_qseq_jg1 = \'" + strains[s] + "\' or b.blast_sseq_jg1 = \'" + strains[s] + "\'"
+		strain_string += " b.q_org = \'" + strains[s] + "\' or b.h_org = \'" + strains[s] + "\'"
 		if s != len(strains)-1:
 			strain_string += " or "
 
 
 	for i in range(0,len(genes)):
-		gene_string += " a.blast_qseq_id like \'%" + genes[i] + "%\' or a.blast_sseq_id like \'%" + genes[i] + "%\'"
+		gene_string += " a.q_seqid like \'%" + genes[i] + "%\' or a.h_seqid like \'%" + genes[i] + "%\'"
 		if i != len(genes)-1:
 			gene_string += " or "
 

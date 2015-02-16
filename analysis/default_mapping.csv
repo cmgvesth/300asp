@@ -1,9 +1,0 @@
-query_id;query_org;A1;A1cov;A1p;A3;A3cov;A3p;A7;A7cov;A7p
-118581;Aniger3;jgi|Aspni1|118581|gw1.5.1.1;100;100;118581;100;100;jgi|Aspni7|1087449|e_gw1.401.482.1;100;100
-jgi|Aspni1|118581|gw1.5.1.1;Aniger1;jgi|Aspni1|118581|gw1.5.1.1;100;100;118581;100;100;jgi|Aspni7|1087449|e_gw1.401.482.1;100;100
-jgi|Aspni7|1185811|estExt_Genemark1.C_chr_5010080;Aniger7;jgi|Aspni1|45030|fgenesh1_pg.C_scaffold_16000078;100;100;45030;100;100;jgi|Aspni7|1185811|estExt_Genemark1.C_chr_5010080;100;100
-jgi|Aspni7|1185812|estExt_Genemark1.C_chr_5010081;Aniger7;jgi|Aspni1|136764|gw1.16.500.1;100;100;136764;100;100;jgi|Aspni7|1185812|estExt_Genemark1.C_chr_5010081;100;100
-jgi|Aspni7|1185814|estExt_Genemark1.C_chr_5010084;Aniger7;jgi|Aspni1|127698|gw1.16.237.1;100;98;127698;100;98;jgi|Aspni7|1185814|estExt_Genemark1.C_chr_5010084;100;100
-jgi|Aspni7|1185816|estExt_Genemark1.C_chr_5010086;Aniger7;jgi|Aspni1|45037|fgenesh1_pg.C_scaffold_16000085;100;100;45037;100;100;jgi|Aspni7|1185816|estExt_Genemark1.C_chr_5010086;100;100
-jgi|Aspni7|1185818|estExt_Genemark1.C_chr_5010092;Aniger7;jgi|Aspni1|50976|fgenesh1_pm.C_scaffold_16000042;100;100;50976;100;100;jgi|Aspni7|1185818|estExt_Genemark1.C_chr_5010092;100;100
-jgi|Aspni7|1185819|estExt_Genemark1.C_chr_5010096;Aniger7;jgi|Aspni1|213911|estExt_GeneWisePlus.C_160221;100;100;213911;100;100;jgi|Aspni7|1185819|estExt_Genemark1.C_chr_5010096;100;100

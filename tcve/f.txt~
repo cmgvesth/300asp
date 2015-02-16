@@ -1,0 +1,9 @@
+select real_name, h_seqid, prot_seqname, prot_seq  from (
+     select tb.q_seqid, tb.h_seqid, tb.h_org, tb.q_org  from blast as tb
+     join (
+         select q_seqid, h_org, max(pident) as max from blast
+         where q_org = "Aspnid1" and q_tail like "%AN1242" group by h_org ) as ta
+     on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and ta.max=tb.pident) as tc
+join organism on tc.h_org = name
+left join proteins on tc.h_seqid = prot_seqname
+order by real_name;

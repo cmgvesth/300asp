@@ -71,13 +71,13 @@ def fetchGenes (strains, genes):
 	(strain_string, gene_string) = ("","")
 
 	for s in range(0,len(strains)):
-		strain_string += " blast_sseq_jg1 = \'" + strains[s] + "\'"
+		strain_string += " h_org = \'" + strains[s] + "\'"
 		if s != len(strains)-1:
 			strain_string += " or "
 
 
 	for i in range(0,len(genes)):
-		gene_string += " blast_qseq_id like \'%" + genes[i] + "%\'"
+		gene_string += " q_seqid like \'%" + genes[i] + "%\'"
 		if i != len(genes)-1:
 			gene_string += " or "
 
@@ -85,9 +85,9 @@ def fetchGenes (strains, genes):
 	#print gene_string
 
 	try:
-		query = ("SELECT blast_qseq_jg1, blast_sseq_jg1, blast_qseq_id, blast_sseq_id, blast_pident, \
-		(blast_qend-blast_qstart+1)/blast_qlen*100 as qcov, (blast_send-blast_sstart+1)/blast_slen*100 as scov \
-		from blast where (" + gene_string + ") and (" + strain_string + ") and blast_sseq_id != blast_qseq_id; ")
+		query = ("SELECT q_org, h_org, q_seqid, h_seqid, pident, \
+		(q_end-q_start+1)/q_len*100 as qcov, (h_end-h_start+1)/h_len*100 as scov \
+		from blast where (" + gene_string + ") and (" + strain_string + ") and h_seqid != q_seqid; ")
 		cursor.execute(query)
 
 	except mdb.Error, e: 

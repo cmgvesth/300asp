@@ -1,0 +1,10 @@
+select real_name, h_seqid, pident, q_len as AN1242len, h_len, pct_longCov, pct_shortCov  from (
+select tb.q_seqid, tb.h_seqid, max as pident, tb.q_len, tb.h_len,
+ROUND(((((LEAST((h_end-h_start), (q_end-q_start)))+1)/GREATEST(q_len,h_len))*100),2) AS pct_longCov,
+ROUND(((((LEAST((h_end-h_start), (q_end-q_start)))+1)/LEAST(q_len,h_len))*100),2) AS pct_shortCov, tb.h_org, tb.q_org 
+from blast as tb join (
+select q_seqid, h_org, max(pident) as max from blast
+where q_org = "Aspnid1" and q_tail like "%AN1242" group by h_org ) as ta
+on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and ta.max=tb.pident) as tc
+join organism on tc.h_org = name order by real_name;
+

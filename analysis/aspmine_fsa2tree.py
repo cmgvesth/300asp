@@ -28,7 +28,7 @@ assert os.path.isfile(fastafile), sys.exit("# ERROR File " + fastafile + " does 
 ------------------------------------------------------------------'''
 print "#--------------------------------------------------------------\n\
 # ARGUMENTS\n\
-# Description\t: Script return list of best bidirectional hit for a gene in a specific strain\n\
+# Description\t: Create distance tree from FASTA file\n\
 # FASTA file\t: %s\n\
 #--------------------------------------------------------------" % (fastafile)
 
@@ -70,24 +70,40 @@ if not os.path.isfile(fastafile.replace("fsa", "aln")):
 # Draw tree
 ------------------------------------------------------------------'''
 
-tree = Phylo.read(fastafile.replace("fsa", "phb"), "newick")
-#print tree
+# CLEAN UP negative branch lengths
+newlines = ""
+phbfile = open(fastafile.replace("fsa", "phb"), "r")
 
+for line in phbfile.readlines():
+	newlines += line.replace(":-0.", ":0.")
+phbfile.close()
+
+phbfile = open(fastafile.replace("fsa", "phb"), "w")
+phbfile.write(newlines)
+phbfile.close()
+
+# Create tree from phb file
+tree = Phylo.read(fastafile.replace("fsa", "phb"), "newick", rooted=True)
+
+nrclades = len(tree.get_terminals())
 for clade in tree.get_terminals():
-	if re.match("jgi|", clade.name):
-		clade.name=(clade.name).replace("jgi|", "")
+	cname = str(clade.name)
+	if re.match("jgi|", cname):
+		clade.name=(cname).replace("jgi|", "")
 
-	if re.match("|", clade.name):
-		clade.name=("_").join((clade.name).split("|")[0:2])
+	if re.match("|", cname):
+		clade.name=("_").join((cname).split("|")[0:2])
 
-fhascii = open(fastafile.replace("fsa", "asciitree.txt"), "wb")
-#Phylo.draw_ascii(tree)
+fhascii = open(fastafile.replace(".fsa", "_asciitree.txt"), "wb")
 Phylo.draw_ascii(tree, file=fhascii)
-print "# INFO: created ascii tree in file %s" % fastafile.replace("fsa", "asciitree.txt")
+#Phylo.draw_ascii(tree)
+print "# INFO: created ascii tree in file %s" % fastafile.replace(".fsa", "_asciitree.txt")
 
-
-tree_draw = Phylo.draw(tree, do_show=False, branch_labels=(lambda c: c.branch_length > 0.02 and format( c.branch_length, '.2f') or None))
-pylab.savefig(fastafile.replace(".fsa", "_tree.pdf"),  format="pdf", orientation="landscape", dpi=72.72)
+fig = plt.figure(figsize=(20,30+nrclades/10))
+ax = fig.add_subplot(111)
+tree_draw = Phylo.draw(tree, do_show=False, branch_labels=(lambda c: c.branch_length > 0.02 and format( c.branch_length, '.2f') or None), axes=ax)
+pylab.savefig(fastafile.replace(".fsa", "_tree.pdf"),  format="pdf", orientation="landscape", dpi=200)
+print "# INFO: created PDF tree in file %s" % fastafile.replace("fsa", "_tree.pdf")
 
 """
 x = np.linspace(0, 2 * np.pi, 100)

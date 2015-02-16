@@ -1,0 +1,98 @@
+                    , brunneoviolaceus_jgi_Aspbru1
+                    |
+                   ,| fijiensis_jgi_Aspfij1
+                   ||
+                  ,|| aculeatinus_jgi_Aspacu1
+                  ||
+                  || aculeatus_jgi_Aspac1
+                  |
+               ___| , japonicus_jgi_Aspjap1
+              |   |,|
+              |   ||| violaceofuscus_jgi_Aspvio1
+              |   ||
+           ___|   || indologenus_jgi_Aspind1
+          |   |    |
+          |   |    | uvarum_jgi_Aspuva1
+          |   |
+          |   | ___ homomorphus_jgi_Asphom1
+          |   ||
+          |    |____ saccharolyticus_jgi_Aspsac1
+          |
+          |            , flavus_jgi_Aspfl1
+          |   _________|
+         _|  |         | oryzae_jgi_Aspor1
+        | |  |
+        | |  |____________ steynii_jgi_Aspste1
+        | |  |
+        | |  |_____________ terreus_jgi_Aspte1
+        | |  |
+        | |  |           ___ sydowii_jgi_Aspsy1
+        | |  |   _______|
+        | |  | _|       |___ versicolor_jgi_Aspve1
+        | |  || |
+        | |  || |__________ ochraceoroseus_jgi_Aspoch1
+        | |__,|
+        |    ||   ______________ nidulans_jgi_Aspnid1
+        |    || ,|
+        |    ||_||_______________ zonatus_jgi_Aspzo1
+        |    |  |
+       ,|    |  |___________________________ glaucus_jgi_Aspgl1
+       ||    |
+       ||    |_____________ campestris_jgi_Aspcam1
+       ||    |
+       ||    |_____________ wentii_jgi_Aspwe1
+       ||    |
+       ||    |          _ fischerianus_jgi_Neofi1
+       ||    |         |
+       ||    |         |_ novofumigatus_jgi_Aspnov1
+       ||    |    _____|
+       ||    |   |     | , fumigatus_A1163_jgi_Aspfu_A116
+    ___||    |___|     |_|
+   |   ||        |       | fumigatus_Af293_jgi_Aspfu1
+   |   ||        |
+   |   ||        |_______ clavatus_jgi_Aspcl1
+   |   ||
+   |   ||   ____ ellipticus_jgi_Aspell1
+   |   ||__|
+   |   |   |____ heteromorphus_jgi_Asphet1
+   |   |
+   |   |   __ carbonarius_jgi_Aspca3
+   |   | ,|
+   |   | ||__ sclerotioniger_jgi_Aspscl1
+   |   |_|
+   |     | __ ibericus_jgi_Aspibe1
+   |     ||
+   |      |__ sclerotiicarbonarius_jgi_Aspsc
+   |
+  _|___ brasiliensis_jgi_Aspbr1
+ | |
+ | |  , niger_ATCC_13496_jgi_Aspni_bvT
+ | |  |
+ | |  | niger_CBS_513.88_jgi_Aspni_DSM
+ | |  |
+ | |  | lacticoffeatus_jgi_Asplac1
+ | |  |
+ | |  | niger_ATCC_1015_jgi_Aspni7
+ | |  |
+ | |__| niger_NRRL3_jgi_Aspni_NRRL3_1
+ |    |
+ |    | phoenicis_jgi_Aspph1
+ |
+ , costaricaensis_jgi_Aspcos1
+ |
+ | tubingensis_jgi_Asptu1
+ |
+ | vadensis_jgi_Aspvad1
+ |
+ | eucalypticola_jgi_Aspeuc1
+ |
+_, acidus_jgi_Aspfo1
+ |
+ | foetidus_jgi_Aspfo1
+ |
+ | piperis_jgi_Asppip1
+ |
+ | kawachii_jgi_Aspka1_1
+ |
+ | neoniger_jgi_Aspneo1
+
