@@ -33,13 +33,6 @@ print "#--------------------------------------------------------------\n\
 #--------------------------------------------------------------" % (fastafile)
 
 '''------------------------------------------------------------------
-# Clean up fasta file
-------------------------------------------------------------------'''
-
-
-
-
-'''------------------------------------------------------------------
 # Run alignment
 ------------------------------------------------------------------'''
 from Bio.Align.Applications import ClustalwCommandline
@@ -71,6 +64,7 @@ if not os.path.isfile(fastafile.replace("fsa", "aln")):
 ------------------------------------------------------------------'''
 
 # CLEAN UP negative branch lengths
+# Open file and remove negatives
 newlines = ""
 phbfile = open(fastafile.replace("fsa", "phb"), "r")
 
@@ -78,6 +72,7 @@ for line in phbfile.readlines():
 	newlines += line.replace(":-0.", ":0.")
 phbfile.close()
 
+# Open file and write new content
 phbfile = open(fastafile.replace("fsa", "phb"), "w")
 phbfile.write(newlines)
 phbfile.close()
@@ -85,7 +80,7 @@ phbfile.close()
 # Create tree from phb file
 tree = Phylo.read(fastafile.replace("fsa", "phb"), "newick", rooted=True)
 
-nrclades = len(tree.get_terminals())
+# Pretty up branch names
 for clade in tree.get_terminals():
 	cname = str(clade.name)
 	if re.match("jgi|", cname):
@@ -94,57 +89,17 @@ for clade in tree.get_terminals():
 	if re.match("|", cname):
 		clade.name=("_").join((cname).split("|")[0:2])
 
+# Draw ascii tree
 fhascii = open(fastafile.replace(".fsa", "_asciitree.txt"), "wb")
 Phylo.draw_ascii(tree, file=fhascii)
-#Phylo.draw_ascii(tree)
 print "# INFO: created ascii tree in file %s" % fastafile.replace(".fsa", "_asciitree.txt")
 
+# Fix size of plot
+nrclades = len(tree.get_terminals())
 fig = plt.figure(figsize=(20,30+nrclades/10))
 ax = fig.add_subplot(111)
+
+# Plot tree
 tree_draw = Phylo.draw(tree, do_show=False, branch_labels=(lambda c: c.branch_length > 0.02 and format( c.branch_length, '.2f') or None), axes=ax)
 pylab.savefig(fastafile.replace(".fsa", "_tree.pdf"),  format="pdf", orientation="landscape", dpi=200)
 print "# INFO: created PDF tree in file %s" % fastafile.replace("fsa", "_tree.pdf")
-
-"""
-x = np.linspace(0, 2 * np.pi, 100)
-y = 2 * np.sin(x)
-fig, (ax0, ax1) = plt.subplots(nrows=2)
-
-ax0.plot(x, y)
-ax0.set_title('normal spines')
-
-ax1.plot(x, y)
-ax1.set_title('bottom-left spines')
-
-# Hide the right and top spines
-ax1.spines['right'].set_visible(False)
-ax1.spines['top'].set_visible(False)
-# Only show ticks on the left and bottom spines
-ax1.yaxis.set_ticks_position('left')
-ax1.xaxis.set_ticks_position('bottom')
-
-# Tweak spacing between subplots to prevent labels from overlapping
-plt.subplots_adjust(hspace=0.5)
-
-plt.show()
-"""
-"""
-ax = pylab.subplot(111)
-#print type(ax)
-ax.set_title('bottom-left spines')
-
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.yaxis.set_ticks_position('left')
-ax.xaxis.set_ticks_position('bottom')
-
-ax.plot(tree_draw)
-pylab.show()
-#print tree_draw
-#axhspan=((0.25, 7.75), {'facecolor':'0.5'}))
-#tree_draw.axis([0, 6, 0, 20])
-pylab.savefig(fastafile.replace(".fsa", "_tree.pdf"),  format="pdf", orientation="landscape", dpi=72.72)
-#print "# INFO: created pdf tree in file %s" % fastafile.replace("fsa", "tree.txt")
-
-#Phylo.draw(tree, branch_labels=lambda c: str(c.branch_length)+"_"+str(c.comment))
-"""

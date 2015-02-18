@@ -146,6 +146,8 @@ if not cursor.execute("SHOW TABLES LIKE 'blast';"):
 	  `q_seqid` varchar(100) NOT NULL,\
 	  `filename` varchar(100) NOT NULL,\
 	  `loadstamp` varchar(100) NOT NULL,\
+	  `q_cov` decimal(10,2) DEFAULT NULL,\
+  	  `h_cov` decimal(10,2) DEFAULT NULL,\
 	  PRIMARY KEY (`bitscore`,q_org,q_seqkey,h_org, h_seqkey,`q_start`, h_start),\
 	  KEY `q_org` (`q_org`),\
 	  KEY `q_seqkey` (`q_seqkey`),\
@@ -255,10 +257,13 @@ def process_lines(file_lines, filename):
 			if re.search("VsAfoetidus", str(filename)):
 				h_org = "Afoetidus"
 			
+			q_cov = ((q_end-q_start+1)/q_len*100);
+			h_cov = ((h_end-h_start+1)/h_len*100);
+
 			#print filename, q_org, h_org
 				
 			values = ( filename, q_seqid, q_org, q_seqkey, q_tail , h_seqid, h_org, h_seqkey, h_tail,\
-					pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore , loadstamp)
+					pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore , loadstamp, q_cov, h_cov)
 
 			values = [re.sub( r"^0+", "", i ) for i in values]
 			values_to_insert.append( values ) # Create sets of lists of values
@@ -273,7 +278,7 @@ def process_lines(file_lines, filename):
 			try:	
 				cursor.executemany( "INSERT INTO blast ( filename, q_seqid, q_org, q_seqkey, q_tail ,\
 									h_seqid, h_org, h_seqkey, h_tail, pident, q_len, q_start, q_end,\
-									h_len, h_start, h_end, evalue, bitscore , loadstamp )\
+									h_len, h_start, h_end, evalue, bitscore , loadstamp, q_cov, h_cov )\
 									values(%s);" % ("%s," * len(values)).rstrip(","),values_to_insert )
 				db.commit()	# Add changes to database
 				

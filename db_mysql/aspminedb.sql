@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost:3306
--- Generation Time: Feb 13, 2015 at 10:58 AM
+-- Generation Time: Feb 18, 2015 at 01:52 PM
 -- Server version: 5.5.41-0ubuntu0.14.04.1
 -- PHP Version: 5.5.9-1ubuntu4.5
 
@@ -26,8 +26,6 @@ USE `aspminedb`;
 
 --
 -- Table structure for table `antiblast`
---
--- Creation: Feb 10, 2015 at 02:09 PM
 --
 
 DROP TABLE IF EXISTS `antiblast`;
@@ -62,8 +60,6 @@ CREATE TABLE IF NOT EXISTS `antiblast` (
 --
 -- Table structure for table `antismash`
 --
--- Creation: Feb 11, 2015 at 05:12 PM
---
 
 DROP TABLE IF EXISTS `antismash`;
 CREATE TABLE IF NOT EXISTS `antismash` (
@@ -89,43 +85,47 @@ CREATE TABLE IF NOT EXISTS `antismash` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `antismash2org2blast`
---
--- Creation: Feb 11, 2015 at 04:47 PM
+-- Table structure for table `antismash2blast`
 --
 
-DROP TABLE IF EXISTS `antismash2org2blast`;
-CREATE TABLE IF NOT EXISTS `antismash2org2blast` (
+DROP TABLE IF EXISTS `antismash2blast`;
+CREATE TABLE IF NOT EXISTS `antismash2blast` (
   `org_id` int(11) NOT NULL,
   `sm_protein_id` int(11) NOT NULL,
   `clust_id` varchar(74) NOT NULL DEFAULT '',
   `name` varchar(100) NOT NULL,
-  `blast_qseq_jg1` varchar(100) NOT NULL,
-  `blast_qseq_jg2` varchar(100) NOT NULL,
-  `blast_qseq_jg3` varchar(100) NOT NULL,
-  `blast_sseq_jg1` varchar(100) NOT NULL,
-  `blast_sseq_jg2` varchar(100) NOT NULL,
-  `blast_sseq_jg3` varchar(100) NOT NULL,
-  `blast_pident` decimal(10,2) DEFAULT NULL,
-  `blast_qlen` int(11) NOT NULL,
-  `blast_qstart` int(11) NOT NULL,
-  `blast_qend` int(11) NOT NULL,
-  `blast_slen` int(11) NOT NULL,
-  `blast_sstart` int(11) NOT NULL,
-  `blast_send` int(11) NOT NULL,
-  `blast_bitscore` int(11) NOT NULL,
-  `blast_evalue` varchar(10) NOT NULL,
-  `blast_sseq_id` varchar(100) NOT NULL,
-  `blast_qseq_id` varchar(100) NOT NULL,
-  `blast_filename` varchar(100) NOT NULL
+  `q_org` varchar(100) NOT NULL,
+  `q_seqkey` varchar(100) NOT NULL,
+  `q_tail` varchar(100) NOT NULL,
+  `h_org` varchar(100) NOT NULL,
+  `h_seqkey` varchar(100) NOT NULL,
+  `h_tail` varchar(100) NOT NULL,
+  `pident` decimal(10,2) DEFAULT NULL,
+  `q_len` int(11) NOT NULL,
+  `q_start` int(11) NOT NULL,
+  `q_end` int(11) NOT NULL,
+  `h_len` int(11) NOT NULL,
+  `h_start` int(11) NOT NULL,
+  `h_end` int(11) NOT NULL,
+  `bitscore` int(11) NOT NULL,
+  `evalue` varchar(10) NOT NULL,
+  `h_seqid` varchar(100) NOT NULL,
+  `q_seqid` varchar(100) NOT NULL,
+  `filename` varchar(100) NOT NULL,
+  `loadstamp` varchar(100) NOT NULL,
+  `q_cov` decimal(10,2) DEFAULT NULL,
+  `h_cov` decimal(10,2) DEFAULT NULL,
+  KEY `sm_protein_id` (`sm_protein_id`,`name`),
+  KEY `name` (`name`),
+  KEY `sm_protein_id_2` (`sm_protein_id`),
+  KEY `seqids` (`h_seqid`,`q_seqid`),
+  KEY `qseq_horg_pident` (`q_seqid`,`h_org`,`pident`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `antismash2organism`
---
--- Creation: Feb 11, 2015 at 04:35 PM
 --
 
 DROP TABLE IF EXISTS `antismash2organism`;
@@ -134,9 +134,7 @@ CREATE TABLE IF NOT EXISTS `antismash2organism` (
   `sm_protein_id` int(11) NOT NULL,
   `clust_id` varchar(74) NOT NULL DEFAULT '',
   `name` varchar(100) NOT NULL,
-  KEY `sm_protein_id` (`sm_protein_id`),
-  KEY `name` (`name`),
-  KEY `sm_protein_id_2` (`sm_protein_id`,`name`)
+  KEY `sm_protein_id` (`sm_protein_id`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -144,72 +142,19 @@ CREATE TABLE IF NOT EXISTS `antismash2organism` (
 --
 -- Table structure for table `antitmp`
 --
--- Creation: Feb 10, 2015 at 01:20 PM
---
 
 DROP TABLE IF EXISTS `antitmp`;
 CREATE TABLE IF NOT EXISTS `antitmp` (
   `org_id` int(11) NOT NULL,
   `sm_protein_id` int(11) NOT NULL,
-  `clust_id` varchar(74) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `antitmp2`
---
--- Creation: Feb 10, 2015 at 01:20 PM
---
-
-DROP TABLE IF EXISTS `antitmp2`;
-CREATE TABLE IF NOT EXISTS `antitmp2` (
-  `org_id` int(11) NOT NULL,
-  `sm_protein_id` int(11) NOT NULL,
-  `clust_id` varchar(74) NOT NULL DEFAULT '',
+  `clust_id` varchar(86) NOT NULL DEFAULT '',
   `name` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `antitmp3`
---
--- Creation: Feb 10, 2015 at 01:20 PM
---
-
-DROP TABLE IF EXISTS `antitmp3`;
-CREATE TABLE IF NOT EXISTS `antitmp3` (
-  `org_id` int(11) NOT NULL,
-  `sm_protein_id` int(11) NOT NULL,
-  `clust_id` varchar(74) NOT NULL DEFAULT '',
-  `name` varchar(100) NOT NULL,
-  `blast_qseq_jg1` varchar(100) NOT NULL,
-  `blast_qseq_jg2` varchar(100) NOT NULL,
-  `blast_qseq_jg3` varchar(100) NOT NULL,
-  `blast_sseq_jg1` varchar(100) NOT NULL,
-  `blast_sseq_jg2` varchar(100) NOT NULL,
-  `blast_sseq_jg3` varchar(100) NOT NULL,
-  `blast_pident` decimal(10,2) DEFAULT NULL,
-  `blast_qlen` int(11) NOT NULL,
-  `blast_qstart` int(11) NOT NULL,
-  `blast_qend` int(11) NOT NULL,
-  `blast_slen` int(11) NOT NULL,
-  `blast_sstart` int(11) NOT NULL,
-  `blast_send` int(11) NOT NULL,
-  `blast_bitscore` int(11) NOT NULL,
-  `blast_evalue` varchar(10) NOT NULL,
-  `blast_sseq_id` varchar(100) NOT NULL,
-  `blast_qseq_id` varchar(100) NOT NULL,
-  `blast_filename` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `assembly`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `assembly`;
@@ -229,10 +174,6 @@ CREATE TABLE IF NOT EXISTS `assembly` (
 
 --
 -- Table structure for table `blast`
---
--- Creation: Feb 12, 2015 at 04:34 PM
--- Last update: Feb 13, 2015 at 09:49 AM
--- Last check: Feb 12, 2015 at 04:34 PM
 --
 
 DROP TABLE IF EXISTS `blast`;
@@ -256,6 +197,8 @@ CREATE TABLE IF NOT EXISTS `blast` (
   `q_seqid` varchar(100) NOT NULL,
   `filename` varchar(100) NOT NULL,
   `loadstamp` varchar(100) NOT NULL,
+  `q_cov` decimal(10,2) DEFAULT NULL,
+  `h_cov` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`bitscore`,`q_org`,`q_seqkey`,`h_org`,`h_seqkey`,`q_start`,`h_start`),
   KEY `q_org` (`q_org`),
   KEY `q_seqkey` (`q_seqkey`),
@@ -263,15 +206,14 @@ CREATE TABLE IF NOT EXISTS `blast` (
   KEY `h_seqkey` (`h_seqkey`),
   KEY `h_seqid` (`h_seqid`),
   KEY `q_seqid` (`q_seqid`),
-  KEY `filename` (`filename`)
+  KEY `filename` (`filename`),
+  KEY `q_seqkey_2` (`q_seqkey`,`q_org`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `cds`
---
--- Creation: Feb 11, 2015 at 05:13 PM
 --
 
 DROP TABLE IF EXISTS `cds`;
@@ -293,8 +235,6 @@ CREATE TABLE IF NOT EXISTS `cds` (
 --
 -- Table structure for table `environment`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `environment`;
 CREATE TABLE IF NOT EXISTS `environment` (
@@ -308,8 +248,6 @@ CREATE TABLE IF NOT EXISTS `environment` (
 
 --
 -- Table structure for table `gff`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `gff`;
@@ -338,8 +276,6 @@ CREATE TABLE IF NOT EXISTS `gff` (
 --
 -- Table structure for table `go`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `go`;
 CREATE TABLE IF NOT EXISTS `go` (
@@ -354,8 +290,6 @@ CREATE TABLE IF NOT EXISTS `go` (
 
 --
 -- Table structure for table `ipr`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `ipr`;
@@ -373,8 +307,6 @@ CREATE TABLE IF NOT EXISTS `ipr` (
 --
 -- Table structure for table `kegg`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `kegg`;
 CREATE TABLE IF NOT EXISTS `kegg` (
@@ -389,14 +321,12 @@ CREATE TABLE IF NOT EXISTS `kegg` (
   `kegg_pathway_type` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`kegg_id`),
   UNIQUE KEY `kegg_ecNum_kegg_pathway` (`kegg_ecNum`,`kegg_pathway`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=371867 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=406029 ;
 
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `kog`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `kog`;
@@ -412,8 +342,6 @@ CREATE TABLE IF NOT EXISTS `kog` (
 
 --
 -- Table structure for table `lengths`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `lengths`;
@@ -445,8 +373,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`asp`@`localhost` SQL SECURITY DEFINER VIEW `
 
 --
 -- Table structure for table `map_niger_prot`
---
--- Creation: Feb 10, 2015 at 09:12 AM
 --
 
 DROP TABLE IF EXISTS `map_niger_prot`;
@@ -488,8 +414,6 @@ CREATE TABLE IF NOT EXISTS `map_niger_prot` (
 --
 -- Table structure for table `map_niger_prot_complete`
 --
--- Creation: Feb 10, 2015 at 10:33 AM
---
 
 DROP TABLE IF EXISTS `map_niger_prot_complete`;
 CREATE TABLE IF NOT EXISTS `map_niger_prot_complete` (
@@ -510,8 +434,6 @@ CREATE TABLE IF NOT EXISTS `map_niger_prot_complete` (
 
 --
 -- Table structure for table `map_niger_trans`
---
--- Creation: Feb 10, 2015 at 09:28 AM
 --
 
 DROP TABLE IF EXISTS `map_niger_trans`;
@@ -553,8 +475,6 @@ CREATE TABLE IF NOT EXISTS `map_niger_trans` (
 --
 -- Table structure for table `map_niger_trans_complete`
 --
--- Creation: Feb 10, 2015 at 10:33 AM
---
 
 DROP TABLE IF EXISTS `map_niger_trans_complete`;
 CREATE TABLE IF NOT EXISTS `map_niger_trans_complete` (
@@ -576,8 +496,6 @@ CREATE TABLE IF NOT EXISTS `map_niger_trans_complete` (
 --
 -- Table structure for table `organism`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `organism`;
 CREATE TABLE IF NOT EXISTS `organism` (
@@ -589,14 +507,12 @@ CREATE TABLE IF NOT EXISTS `organism` (
   PRIMARY KEY (`org_id`),
   KEY `iname` (`name`),
   KEY `lable` (`section`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=53 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=52 ;
 
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `org_has_environment`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `org_has_environment`;
@@ -612,8 +528,6 @@ CREATE TABLE IF NOT EXISTS `org_has_environment` (
 --
 -- Table structure for table `org_is_species`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `org_is_species`;
 CREATE TABLE IF NOT EXISTS `org_is_species` (
@@ -627,8 +541,6 @@ CREATE TABLE IF NOT EXISTS `org_is_species` (
 
 --
 -- Table structure for table `primary_metabolism`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `primary_metabolism`;
@@ -652,8 +564,6 @@ CREATE TABLE IF NOT EXISTS `primary_metabolism` (
 --
 -- Table structure for table `primary_metabolism_models`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `primary_metabolism_models`;
 CREATE TABLE IF NOT EXISTS `primary_metabolism_models` (
@@ -668,8 +578,6 @@ CREATE TABLE IF NOT EXISTS `primary_metabolism_models` (
 
 --
 -- Table structure for table `proteins`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `proteins`;
@@ -692,8 +600,6 @@ CREATE TABLE IF NOT EXISTS `proteins` (
 --
 -- Table structure for table `protein_has_go`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `protein_has_go`;
 CREATE TABLE IF NOT EXISTS `protein_has_go` (
@@ -708,8 +614,6 @@ CREATE TABLE IF NOT EXISTS `protein_has_go` (
 
 --
 -- Table structure for table `protein_has_ipr`
---
--- Creation: Jan 28, 2015 at 09:35 AM
 --
 
 DROP TABLE IF EXISTS `protein_has_ipr`;
@@ -730,8 +634,6 @@ CREATE TABLE IF NOT EXISTS `protein_has_ipr` (
 --
 -- Table structure for table `protein_has_kegg`
 --
--- Creation: Jan 28, 2015 at 07:40 AM
---
 
 DROP TABLE IF EXISTS `protein_has_kegg`;
 CREATE TABLE IF NOT EXISTS `protein_has_kegg` (
@@ -749,8 +651,6 @@ CREATE TABLE IF NOT EXISTS `protein_has_kegg` (
 --
 -- Table structure for table `protein_has_kog`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `protein_has_kog`;
 CREATE TABLE IF NOT EXISTS `protein_has_kog` (
@@ -765,8 +665,6 @@ CREATE TABLE IF NOT EXISTS `protein_has_kog` (
 
 --
 -- Table structure for table `sigp`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `sigp`;
@@ -785,8 +683,6 @@ CREATE TABLE IF NOT EXISTS `sigp` (
 --
 -- Table structure for table `species`
 --
--- Creation: Jan 26, 2015 at 08:08 AM
---
 
 DROP TABLE IF EXISTS `species`;
 CREATE TABLE IF NOT EXISTS `species` (
@@ -801,8 +697,6 @@ CREATE TABLE IF NOT EXISTS `species` (
 
 --
 -- Table structure for table `testgff`
---
--- Creation: Feb 03, 2015 at 05:14 PM
 --
 
 DROP TABLE IF EXISTS `testgff`;
@@ -827,8 +721,6 @@ CREATE TABLE IF NOT EXISTS `testgff` (
 
 --
 -- Table structure for table `tmp`
---
--- Creation: Jan 29, 2015 at 01:43 PM
 --
 
 DROP TABLE IF EXISTS `tmp`;
@@ -858,8 +750,6 @@ CREATE TABLE IF NOT EXISTS `tmp` (
 --
 -- Table structure for table `tmp_rep`
 --
--- Creation: Jan 30, 2015 at 03:14 PM
---
 
 DROP TABLE IF EXISTS `tmp_rep`;
 CREATE TABLE IF NOT EXISTS `tmp_rep` (
@@ -876,8 +766,6 @@ CREATE TABLE IF NOT EXISTS `tmp_rep` (
 
 --
 -- Table structure for table `transcripts`
---
--- Creation: Jan 26, 2015 at 08:08 AM
 --
 
 DROP TABLE IF EXISTS `transcripts`;

@@ -11,6 +11,8 @@ import xlrd, csv
 
 ''' bio python '''
 from Bio import SeqIO
+from Bio import SearchIO
+
 from Bio.Alphabet import IUPAC
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
