@@ -1,0 +1,35 @@
+
+R version 3.1.1 (2014-07-10) -- "Sock it to Me"
+Copyright (C) 2014 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> data=read.csv("gc_asframe.csv")
+> 
+> data['X'] <- NULL
+> 
+> pdf('gc_dist.pdf')
+> x <- barplot(as.matrix(data), xaxt='n' , ylab= "Number of best hits inside one gene cluster", main='Distribution of gc-members throughout different genomes', sub='Gene Cluster (clust_id: 22_1079950_32)')
+> text(cex=.6, x=x-1, y=-2, names(data) , xpd=TRUE, srt=45) # for rotated x-labels, put xaxt='n' into plot when in use!
+> dev.off()
+null device 
+          1 
+> 
+> proc.time()
+   user  system elapsed 
+  0.175   0.014   0.183 

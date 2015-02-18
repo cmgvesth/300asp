@@ -1,11 +1,11 @@
 import sys,os
-sys.path.append("../../utils/")
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../utils/"))
 from aspmine_imports import *
 
 #------------------------------------------------------------------
 ''' Get command line arguments '''
 #------------------------------------------------------------------
-parser = argparse.ArgumentParser(description="Preprocessing databases for gene clustering", usage="%(prog)s --out filename")
+parser = argparse.ArgumentParser(description="Preprocessing databases for gene clustering", usage="%(prog)s -out filename")
 parser.add_argument("--test","-t", required=False, action="store_true", help="Enables testing mode")
 parser.add_argument("--out", "-o", required=False, default = "initial.csv", help="Name of output file")
 parser.add_argument("--limit", "-lim", required=False, help="Limit of entries to process in Mysql")
@@ -18,17 +18,16 @@ test = args.test
 outfile = args.out
 user = args.user
 
-def asp_con(database):
-	
+
 
 def make_table(outfile):
-
+	outfile = 'newone.csv'
 	
 #------------------------------------------------------------------
 # Connect to specific DB
 #------------------------------------------------------------------
 	try:
-		db = mdb.connect(host="192.38.13.9", user=user ,passwd="1234",db="testasp")
+		db = mdb.connect(host="192.38.13.9", user ,passwd="1234",db="testasp")
 	except mdb.Error, e:
 		sys.exit("Cannot connect to database")#"# ERROR %d: %s" % (e.args[0],e.args[1]))
 	try:
@@ -125,5 +124,5 @@ def make_table(outfile):
 		except mdb.Error, e:
 			sys.exit('Fetching first table entries failed')''' # Implement this in later versions
 
-make_table(outfile)			
+make_table()			
 
