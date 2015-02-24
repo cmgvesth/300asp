@@ -67,7 +67,7 @@ def database( db, host ) :
 	try:
 	    db = mdb.connect(host,"asp","1234",dbname)
 
-	    print "# INFO: success connectiong to existing database %s" % dbname
+	    print "# INFO: success connecting to existing database %s" % dbname
 
 	except mdb.Error, e:
 		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
