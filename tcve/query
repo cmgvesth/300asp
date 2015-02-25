@@ -1,0 +1,2 @@
+SELECT *, ROUND(over/ta_clust_size, 2) as ta_clustCov, ROUND(over/tb_clust_size, 2) as tb_clustCov 
+from ( SELECT *, count(*) as over from clusterVScluster group by ta_clust_id, tb_clust_id) as ta;

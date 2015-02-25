@@ -72,7 +72,7 @@ cursor = DBconnect("localhost", "asp", "1234", args.dbname) # costum function
 ------------------------------------------------------------------'''
 (columns, result)	 = executeQuery(cursor, query)
 if columns and result:
-	cursor2csv(columns, result, queryfile+"_main.csv") # costum function
+	cursor2csv(columns, result, "cursor2csv_main.csv") # costum function
 
 '''------------------------------------------------------------------
 # Execute test query
@@ -80,7 +80,7 @@ if columns and result:
 if tquery:
 	(columns, result)	 = executeQuery(cursor, tquery)
 	if columns and result:
-		cursor2csv(columns, result, testfile+"_test.csv") # costum function
+		cursor2csv(columns, result, "cursor2csv_test.csv") # costum function
 
 '''------------------------------------------------------------------
 # Execute FASTA query
@@ -88,8 +88,9 @@ if tquery:
 if fquery:
 	(columns, result) = executeQuery(cursor, fquery) # costum function
 	if columns and result:
-		f = open(fastafile+".fsa",'wb')
+		f = open("cursor2csv.fsa",'wb')
 		
+
 		cursor2csv(columns, result, "tmp.csv")
 		seqcsv = open("tmp.csv", 'r')
 		seqs = csv.reader(seqcsv,delimiter=';')

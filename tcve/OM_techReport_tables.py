@@ -34,18 +34,9 @@ if not cluster and not stats:
 	sys.exit("# INFO: no tables were selected, to see options, run with -h, exiting")
 
 '''------------------------------------------------------------------
-# Connect to specific DB
+# Connection to database
 ------------------------------------------------------------------'''
-try:
-    db = mdb.connect("localhost","asp","1234",str(args.dbname))
-except mdb.Error, e:
-    sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
-
-try:
-	cursor = db.cursor()
-except mdb.Error, e: 
-	sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
-
+cursor = DBconnect("localhost", "asp", "1234", args.dbname) # costum function
 
 '''------------------------------------------------------------------
 # antismash_cluster_type_counts

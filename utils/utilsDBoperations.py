@@ -15,10 +15,13 @@ from aspmine_imports import *
 # (columns, result)	 = executeQuery(cursor, tquery)
 #######################################################################
 def executeQuery(cursor, query):
+	(columns, result) = ([],[])
 	try:
 		cursor.execute(query)
-		columns = map(lambda x:x[0], cursor.description) 	
 		result = cursor.fetchall()
+		if result:
+			if len(result) > 0:
+				columns = map(lambda x:x[0], cursor.description) 	
 
 	except mdb.Error, e:
 		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))

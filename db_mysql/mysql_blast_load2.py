@@ -35,7 +35,9 @@ Jeg kan ikke gemme begge disse. De har samme orgkey og sekvens key.
 
 for d in $(ls -d */); do  python /home/tcve/github/db_mysql/mysql_blast_load2.py -s $d -action load -e $d ; done
 
+for d in $(ls -d */ | grep -v Aell | grep -v Scer); do  python /home/tcve/github/db_mysql/mysql_blast_load2.py -s $d -action load -e $d -replace; done
 
+ls -d */ | grep -v Aell | grep -v Scer
 
 select count(distinct(filename)) from blast;
 +---------------------------+
@@ -234,39 +236,39 @@ def process_lines(file_lines, filename):
 		( q_seqid, h_seqid, pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore ) = line.split( "\t" )[0:11]
 
 		# Remove selfhits
-		if q_seqid == h_seqid and totalcounter != len( file_lines ):
-			continue
+		#if q_seqid == h_seqid and totalcounter != len( file_lines ):
+			#continue
 		 
+		#else:		
+		(h_org, h_seqkey, h_tail, q_org, q_seqkey, q_tail) = ("","","","","","")
 
-		else:		#print q_seqid, h_seqid
-			(h_org, h_seqkey, h_tail, q_org, q_seqkey, q_tail) = ("","","","","","")
 
+		if len(h_seqid.split("|")) >= 4 : 	(h_org, h_seqkey, h_tail) 	= h_seqid.split("|")[1:4]
+		elif len(h_seqid.split("_")) >= 2:	(h_org, h_seqkey) 			= h_seqid.split("_")[0:2]
+		elif re.search("Afu", h_seqid) :	(h_org, h_seqkey) 			= ("Apfu1", h_seqid)
+		else: 								(h_org, h_seqkey, h_tail) 	= ( h_seqid, "","")
 
-			if len(h_seqid.split("|")) >= 4 : 	(h_org, h_seqkey, h_tail) 	= h_seqid.split("|")[1:4]
-			elif len(h_seqid.split("_")) >= 2:	(h_org, h_seqkey) 			= h_seqid.split("_")[0:2]
-			elif re.search("Afu", h_seqid) :	(h_org, h_seqkey) 			= ("sApfu1", h_seqid)
-			else: 								(h_org, h_seqkey, h_tail) 	= ( h_seqid, "","")
+		if len(q_seqid.split("|")) >= 4 :	(q_org, q_seqkey, q_tail) 	= q_seqid.split("|")[1:4]
+		elif len(q_seqid.split("_")) >= 2:	(q_org, q_seqkey) 			= q_seqid.split("_")[0:2]
+		elif re.search("Afu", q_seqid) :	(q_org, q_seqkey) 			= ("Aspfu1", q_seqid)
+		else: 								(q_org, q_seqkey, q_tail) 	= ( q_seqid, "","")
 
-			if len(q_seqid.split("|")) >= 4 :	(q_org, q_seqkey, q_tail) 	= q_seqid.split("|")[1:4]
-			elif len(q_seqid.split("_")) >= 2:	(q_org, q_seqkey) 			= q_seqid.split("_")[0:2]
-			elif re.search("Afu", q_seqid) :	(q_org, q_seqkey) 			= ("Aspfu1", q_seqid)
-			else: 								(q_org, q_seqkey, q_tail) 	= ( q_seqid, "","")
+		if re.search("^Afoetidus", str(filename)):
+			q_org = "Afoetidus"
+		if re.search("VsAfoetidus", str(filename)):
+			h_org = "Afoetidus"
+		
+		#print q_end,q_start,q_len
+		q_cov = ((float(q_end)-float(q_start)+1)/float(q_len)*100);
+		h_cov = ((float(h_end)-float(h_start)+1)/float(h_len)*100);
 
-			if re.search("^Afoetidus", str(filename)):
-				q_org = "Afoetidus"
-			if re.search("VsAfoetidus", str(filename)):
-				h_org = "Afoetidus"
+		#print filename, q_org, h_org
 			
-			q_cov = ((q_end-q_start+1)/q_len*100);
-			h_cov = ((h_end-h_start+1)/h_len*100);
+		values = ( filename, q_seqid, q_org, q_seqkey, q_tail , h_seqid, h_org, h_seqkey, h_tail,\
+				pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore , loadstamp, str(q_cov), str(h_cov))
 
-			#print filename, q_org, h_org
-				
-			values = ( filename, q_seqid, q_org, q_seqkey, q_tail , h_seqid, h_org, h_seqkey, h_tail,\
-					pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore , loadstamp, q_cov, h_cov)
-
-			values = [re.sub( r"^0+", "", i ) for i in values]
-			values_to_insert.append( values ) # Create sets of lists of values
+		values = [re.sub( r"^0+", "", i ) for i in values]
+		values_to_insert.append( values ) # Create sets of lists of values
 
 
 		# Only load data if action is specified
