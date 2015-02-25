@@ -36,9 +36,34 @@
 ehthumbs.db
 Thumbs.db 
 
-# Added #
-#########
+# Data files #
+##############
 *.txt
 *.csv
-*.pyc
+*.xlsx
+*.xls
+*.png
+*.svg
+*.gz
+*.tar
 *.pdf
+*.fasta
+*.gff
+*.gff3
+*.bib
+*.allmasked
+
+
+# Python #
+##########
+*.py[cod]
+*.pyc
+__pycache__/
+
+
+# Dev #
+#######
+.project
+.pydevproject
+*.RData
+*.Rhistory
