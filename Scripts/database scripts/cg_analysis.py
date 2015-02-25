@@ -168,9 +168,11 @@ def gc_plot(outfile):
 	print "# INFO: running Rscript"
 	os.system("R CMD BATCH '--args %s' gc_plot.R " % outfile)
 
+
 gc_preprocess()
 
 gc_plot(outfile)
 
 #make_table(outfile)			
 
+testing()
