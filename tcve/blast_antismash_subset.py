@@ -17,9 +17,14 @@ parser.add_argument("-clean1", "-c1", required=False, action='store_true', help=
 parser.add_argument("-clean2", "-c2", required=False, action='store_true', help="Compile new antismash2blast")
 #parser.add_argument("-stats", "-s", required=False, action='store_true', help="Compile stats table")
 
+parser.add_argument("--out", "-o", required=False, default = "org_shared_gc.csv", help="Name of output file")
+parser.add_argument("-R", default="org_shared_gc.R", required=False, help="Name of R script, org_shared_gc.R")
+
 args 	= parser.parse_args()
 clean1 = args.clean1
 clean2 = args.clean2
+outfile = args.out
+rscript = args.R
 startTime = datetime.now() # record runtime
 
 '''------------------------------------------------------------------
