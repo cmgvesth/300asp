@@ -28,8 +28,6 @@ def ParseArguments():
 									required=True, help="Specify user")
 	parser.add_argument("--database", "-d", type = str, required=False, default = "testasp", help="Database in MySQL",
 									dest="database", choices=["testasp", "aspminedb", "joomla", "phpmyadmin", "asp"])
-	parser.add_argument("--tablename", "-t", type = str, required=False, default = "testNidCov", 
-									help="Name of created database table")
 	parser.add_argument("--coverage", "-c", type = int, required=False, default = 90, dest= "coverage",
 									help="Minimum alignment coverage")
 	parser.add_argument("--identity", "-i", type = int, required=False, default = 50, dest= "identity",
