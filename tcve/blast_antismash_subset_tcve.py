@@ -24,9 +24,13 @@ executeQuery
 startTime = datetime.now() # record runtime
 parser = CustomArgumentParser(formatter_class=SmartFormatter, usage='%(prog)s -dbname [database name]')
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
+
 parser.add_argument("-clean1", "-c1", required=False, action='store_true', help="Compile new antismash2organism")
 parser.add_argument("-clean2", "-c2", required=False, action='store_true', help="Compile new antismash2blast")
 parser.add_argument("-clean3", "-c3", required=False, action='store_true', help="Compile new antismash2blast_reduced")
+parser.add_argument("-ana1", "-a1", required=False, action='store_true', help="Cluster VS organism")
+parser.add_argument("-ana2", "-a2", required=False, action='store_true', help="Cluster VS Cluster")
+
 parser.add_argument("-csize", "-cs", required=False, default = "5", help="Cluster size cutoff - default 5")
 
 args 	= parser.parse_args()
@@ -34,6 +38,8 @@ clean1 = args.clean1
 clean2 = args.clean2
 clean3 = args.clean3
 csize = args.csize
+ana1 = args.ana1
+ana2 = args.ana2
 startTime = datetime.now() # record runtime
 
 if clean2:
@@ -48,7 +54,9 @@ print "#--------------------------------------------------------------\n\
 # Compile new antismash2blast -clean2\t\t: %s\n\
 # Compile new antismash2blast_reduced -clean3\t: %s\n\
 # Cutoff on cluster size\t\t: %s\n\
-#--------------------------------------------------------------" % (args.dbname, clean1, clean2, clean3, csize)
+# Analysis, cluster VS organism\t\t: %s\n\
+# Analysis, cluster VS cluster\t\t: %s\n\
+#--------------------------------------------------------------" % (args.dbname, clean1, clean2, clean3, csize, ana1, ana2)
 
 '''------------------------------------------------------------------
 # Connection to database
@@ -213,46 +221,48 @@ if smGenesRed and smGenes:
 """--------------------------------------
 ORGANISM VS CLUSTER
 --------------------------------------"""
-# If not specified to create table test if the table actually does exist
-if not cursor.execute("Show tables LIKE 'antismash2blast'") or not cursor.execute("Show tables LIKE 'antismash2blast_reduced'"):
-	sys.exit("# ERROR: table does not exist, re-run with -clean2 option")
+if ana1:
+	# If not specified to create table test if the table actually does exist
+	if not cursor.execute("Show tables LIKE 'antismash2blast'") or not cursor.execute("Show tables LIKE 'antismash2blast_reduced'"):
+		sys.exit("# ERROR: table does not exist, re-run with -clean2 option")
 
-print "# INFO: selecting from antismash2blast_reduced"
+	print "# INFO: selecting from antismash2blast_reduced"
 
-query = "SELECT ta.*, ROUND(nrHits/clust_size, 2) as clustCov, O1.section as sec1, O2.section as sec2  \
-		from (select org_id, clust_id, name, h_org, count(*) as nrHits,\
-		SUBSTRING_INDEX(clust_id, '_', -1) as clust_size from antismash2blast_reduced group by clust_id, h_org ) as ta \
-		join organism O1 using (name)\
-		join organism O2 on (O2.name=h_org)\
-		where clust_size >= " + str(csize)+";"
-(columns, result) = executeQuery(cursor, query)
-cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
+	query = "SELECT ta.*, ROUND(nrHits/clust_size, 2) as clustCov, O1.section as sec1, O2.section as sec2  \
+			from (select org_id, clust_id, name, h_org, count(*) as nrHits,\
+			SUBSTRING_INDEX(clust_id, '_', -1) as clust_size from antismash2blast_reduced group by clust_id, h_org ) as ta \
+			join organism O1 using (name)\
+			join organism O2 on (O2.name=h_org)\
+			where clust_size >= " + str(csize)+";"
+	(columns, result) = executeQuery(cursor, query)
+	cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
 
-print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
+	print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
 
 
 """--------------------------------------
 CLUSTER VS CLUSTER
 --------------------------------------"""
 
-print "# INFO: Dropping and re-creating clusterVScluster"
-cursor.execute("DROP TABLE IF EXISTS clusterVScluster")
-print "# INFO: selecting from clusterVScluster"
+if ana2:
+	print "# INFO: Dropping and re-creating clusterVScluster"
+	cursor.execute("DROP TABLE IF EXISTS clusterVScluster")
+	print "# INFO: selecting from clusterVScluster"
 
-query="CREATE TABLE clusterVScluster as\
-SELECT ta.clust_id ta_clust_id , ta.q_org ta_q_org , ta.q_seqid ta_q_seqid, ta.h_org ta_h_org, ta.h_seqid ta_h_seqid, \
-ta.pident ta_pident, ta.q_cov ta_q_cov, ta.h_cov ta_h_cov, SUBSTRING_INDEX(ta.clust_id, '_', -1) as ta_clust_size, \
-tb.clust_id tb_clust_id , tb.q_org tb_q_org , tb.q_seqid tb_q_seqid, tb.h_org tb_h_org, tb.h_seqid tb_h_seqid, \
-tb.pident tb_pident, tb.q_cov tb_q_cov, tb.h_cov tb_h_cov, SUBSTRING_INDEX(tb.clust_id, '_', -1) as tb_clust_size \
-from antismash2blast as ta \
-LEFT join antismash2blast as tb \
-on ta.q_seqid=tb.h_seqid and ta.h_seqid=tb.q_seqid;"
+	query="CREATE TABLE clusterVScluster as\
+	SELECT ta.clust_id ta_clust_id , ta.q_org ta_q_org , ta.q_seqid ta_q_seqid, ta.h_org ta_h_org, ta.h_seqid ta_h_seqid, \
+	ta.pident ta_pident, ta.q_cov ta_q_cov, ta.h_cov ta_h_cov, SUBSTRING_INDEX(ta.clust_id, '_', -1) as ta_clust_size, \
+	tb.clust_id tb_clust_id , tb.q_org tb_q_org , tb.q_seqid tb_q_seqid, tb.h_org tb_h_org, tb.h_seqid tb_h_seqid, \
+	tb.pident tb_pident, tb.q_cov tb_q_cov, tb.h_cov tb_h_cov, SUBSTRING_INDEX(tb.clust_id, '_', -1) as tb_clust_size \
+	from antismash2blast as ta \
+	LEFT join antismash2blast as tb \
+	on ta.q_seqid=tb.h_seqid and ta.h_seqid=tb.q_seqid;"
 
-query="SELECT *, ROUND(over/ta_clust_size, 2) as ta_clustCov, ROUND(over/tb_clust_size, 2) as tb_clustCov \
-from ( SELECT *, count(*) as over from clusterVScluster group by ta_clust_id, tb_clust_id) as ta;"
+	query="SELECT *, ROUND(over/ta_clust_size, 2) as ta_clustCov, ROUND(over/tb_clust_size, 2) as tb_clustCov \
+	from ( SELECT *, count(*) as over from clusterVScluster group by ta_clust_id, tb_clust_id) as ta;"
 
-(columns, result) = executeQuery(cursor, query)
-cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
+	(columns, result) = executeQuery(cursor, query)
+	cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
 
 
 
@@ -260,6 +270,38 @@ cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
 
 
 """
+
+select antismash2blast_reduced.org_id as q_org_id, clust_id, antismash2blast_reduced.name, q_seqkey, organism.org_id as h_org_id, h_org, h_seqkey,
+SUBSTRING_INDEX(clust_id, '_', -1) as clust_size 
+from antismash2blast_reduced 
+join organism on h_org=organism.name 
+join antismash on
+limit 10;
+
+
+select tc.*, cluster from (
+SELECT ta.*, O1.section as sec1, O2.section as sec2, O2.org_id as h_org_id  \
+from (select org_id, clust_id, SUBSTRING_INDEX(clust_id, '_', -1) as clust_size, name, q_seqkey, h_org, h_seqkey from antismash2blast_reduced ) as ta \
+join organism O1 using (name)\
+join organism O2 on (O2.name=h_org)\
+where clust_size >= 10 and h_org = "Aspni7" and h_org != "Afoetidus" and O1.section="Nigri" and O2.section="Nigri" ) as tc
+left join antismash on antismash.org_id=h_org_id and h_seqkey=antismash.sm_protein_id
+order by tc.clust_id
+ limit 10;
+
+
+select tc.*, cluster from (
+SELECT ta.*, ROUND(nrHits/clust_size, 2) as clustCov, O1.section as sec1, O2.section as sec2, O2.org_id as h_org_id  \
+from (select org_id, clust_id, sm_protein_id, name, h_org, h_seqkey, count(*) as nrHits,\
+SUBSTRING_INDEX(clust_id, '_', -1) as clust_size from antismash2blast_reduced group by clust_id, h_seqkey ) as ta \
+join organism O1 using (name)\
+join organism O2 on (O2.name=h_org)\
+where clust_size >= 10 and h_org = "Aspni7" and h_org != "Afoetidus" and O1.section="Nigri" and O2.section="Nigri" ) as tc
+left join antismash on antismash.org_id=h_org_id and h_seqkey=antismash.sm_protein_id
+order by tc.clust_id
+ limit 10;
+
+
 select * from (
 select ta.* from antismash2blast as ta\
 join ( select q_seqid, h_seqid, h_org, max(pident) as max from antismash2blast group by q_seqid, h_org ) as tb \
