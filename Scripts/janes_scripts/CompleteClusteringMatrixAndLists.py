@@ -22,8 +22,6 @@ def ParseArguments():
 	all parameters """
 	parser = argparse.ArgumentParser(description="Preprocessing databases for gene clustering", 
 									usage="%(prog)s -out filename")
-	parser.add_argument("--outfile", "-o", type = str, required=False, 
-									default = "initial.csv", help="Name of output file")
 	parser.add_argument("--user", "-u", type = str, choices=["setd", "jlnr"], default = "jlnr", dest="user",
 									required=True, help="Specify user")
 	parser.add_argument("--database", "-d", type = str, required=False, default = "testasp", help="Database in MySQL",
