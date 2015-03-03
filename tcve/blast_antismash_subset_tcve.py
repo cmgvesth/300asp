@@ -250,11 +250,6 @@ if loop:
 
 """--------------------------------------
 antismashLoopAntismash - best candicate cluster analysis
-
-
-
-
-
 --------------------------------------"""
 if anaLoop:
 
@@ -271,6 +266,10 @@ if anaLoop:
 
 	print "# INFO: wrote results to antismashLoopAntismash.csv"
 	print "# INFO Runtime analysis of antismashLoopAntismash: ", (datetime.now()-startTimeanaLoop)
+
+	print "# INFO: running Rscript"
+	os.system("R CMD BATCH '--args antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+
 
 """--------------------------------------
 ORGANISM VS CLUSTER
@@ -317,8 +316,6 @@ if ana2:
 
 	(columns, result) = executeQuery(cursor, query)
 	cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
-
-
 
 
 
