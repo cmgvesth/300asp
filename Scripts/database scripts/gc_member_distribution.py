@@ -19,8 +19,10 @@ def gc_preprocess():
 		sys.exit("# ERROR %d: %s" % (e.args[0],e.args[1]))
 
 	try:
-		query = """select blast_sseq_jg1, found_in_gc from (select ta.blast_sseq_jg1, ta.blast_sseq_jg2,\
-		 antismash.sm_protein_id, antismash.org_id, ta.clust_id as clust_id_x, concat(antismash.org_id, "_", antismash.clust_backbone, "_", antismash.clust_size ) as clust_id_y, count(*) as found_in_gc, blast_qseq_id  from (select blast_sseq_jg1, blast_sseq_jg2, blast_qseq_id, organism.org_id as orgid, clust_id from antiblast left join organism on (blast_sseq_jg1 = organism.name)) as ta left join antismash on blast_sseq_jg2 = antismash.sm_protein_id and ta.orgid = antismash.org_id where org_id!=0 group by clust_id_y) tc;
+		query = """select h_org, found_in_gc from (select ta.h_org, ta.h_seqkey,\
+			antismash.sm_protein_id, antismash.org_id, ta.clust_id as clust_id_x, concat(antismash.org_id, "_", antismash.clust_backbone, "_", antismash.clust_size ) as clust_id_y, count(*) as found_in_gc, blast_qseq_id  from (\
+		 	select h_org, h_seqkey, blast_qseq_id, organism.org_id as orgid, clust_id from antiblast\
+		 	left join organism on (h_org = organism.name)) as ta left join antismash on h_seqkey = antismash.sm_protein_id and ta.orgid = antismash.org_id where org_id!=0 group by clust_id_y) tc;
 		"""
 		cursor.execute(query)
 		result = cursor.fetchall()
