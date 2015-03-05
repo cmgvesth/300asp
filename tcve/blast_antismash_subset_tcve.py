@@ -30,8 +30,14 @@ parser.add_argument("-clean2", "-c2", required=False, action='store_true', help=
 parser.add_argument("-clean3", "-c3", required=False, action='store_true', help="Compile new antismash2blast_reduced")
 parser.add_argument("-ana1", "-a1", required=False, action='store_true', help="Cluster VS organism")
 parser.add_argument("-ana2", "-a2", required=False, action='store_true', help="Cluster VS Cluster")
-
+parser.add_argument("-ana3", "-a3", required=False, action='store_true', help="Clusters shared among organisms")
 parser.add_argument("-csize", "-cs", required=False, default = "5", help="Cluster size cutoff - default 5")
+
+parser.add_argument("--out", "-o", required=False, default = "org_shared_gc.csv", help="Name of output file")
+#parser.add_argument("-R", default="org_shared_gc.R", required=False, help="Name of R script, org_shared_gc.R")
+parser.add_argument("--sec", required=False, default = "Nigri", help="Section name")
+parser.add_argument("--plot","-p", required=False, action='store_true', help="Executes R plotting functions on data")
+parser.add_argument("--cutoff", "-cut",type = int, required=False, default = 0, choices=[0,5,10], action='store_true', help="Select a cutoff for gene cluster sizes, defaults to 0")
 
 args 	= parser.parse_args()
 clean1 = args.clean1
@@ -40,6 +46,13 @@ clean3 = args.clean3
 csize = args.csize
 ana1 = args.ana1
 ana2 = args.ana2
+
+ana2 = args.ana3
+outfile = args.out
+plot = args.plot
+cutoff = args.cutoff
+section = args.sec
+
 startTime = datetime.now() # record runtime
 
 if clean2:
@@ -266,10 +279,46 @@ if ana2:
 
 
 
+"""--------------------------------------
+CLUSTERS shared between ORGANISMS
+--------------------------------------"""
+if ana3:
+	cursor.execute("DROP TABLE IF EXISTS hitsPerOrgPerClusterGene")
 
+	query = "CREATE TABLE hitsPerOrgPerClusterGene as\
+			SELECT ta.*, ROUND(nrHits/clust_size, 2) as clustCov, O1.section as sec1, O2.section as sec2  \
+			from (select org_id, clust_id, name, h_org, count(*) as nrHits,\
+			CONVERT(SUBSTRING_INDEX(clust_id, '_', -1), UNSIGNED INT) as clust_size from antismash2blast_reduced group by clust_id, h_org ) as ta \
+			join organism O1 using (name)\
+			join organism O2 on (O2.name=h_org)\
+			where clust_size >= " + str(csize)+";"
+	executeQuery(cursor, query)
+
+	query = "DELETE FROM hitsPerOrgPerClusterGene where name = 'Aspac1' and h_org = 'Aspac1' " # Add Afoetidus here if it appears again
+
+	executeQuery(cursor, query)
+
+	query = "select *, count(*) as shared_gc from hitsPerOrgPerClusterGene where clustCov >= 0.67 and sec1 = %s and sec2 = %s group and clust_size > %i by name, h_org ;" % (section, section, cutoff)
+	cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
+
+	#print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
+
+'''------------------------------------------------------------------
+# Plotting
+------------------------------------------------------------------'''
+
+
+def make_plot(outfile):
+	print "# INFO: running Rscript"
+	os.system("R CMD BATCH '--args %s %s %s' aspmine_analysis_lengths.R test.out " % (outfile, cutoff, section)
+
+if plot:
+	make_plot(outfile)
 
 
 """
+
+
 
 select antismash2blast_reduced.org_id as q_org_id, clust_id, antismash2blast_reduced.name, q_seqkey, organism.org_id as h_org_id, h_org, h_seqkey,
 SUBSTRING_INDEX(clust_id, '_', -1) as clust_size 

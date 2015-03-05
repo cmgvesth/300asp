@@ -6,11 +6,14 @@ require("argparse")
 
 args <- commandArgs(TRUE)
 infile <- args[1]
+print(infile)
 description <- args[2:4] # Contains section, cutoff1 and cutoff 2
-
+print(description)
 tmpdat=read.csv(infile, header = FALSE)
 #subdat <- subset(tmpdat, tmpdat$V8=="Nigri" & tmpdat$V9=="Nigri", select=c(3,4,10))
-subdat <- subdat[order(subdat$V1, subdat$V2), ]
+subdat <- tmpdat #[order(tmpdat$V1, tmpdat$V2), ]
+
+#aggregate(subdat$V3, list(org=subdat$V1), max) # Find max values for each cluster to normalize
 
 #x <- barplot(as.matrix(tmpdat$V10), xaxt='n' , ylab= "Number of best hits inside one gene cluster", main='Distribution of gc-members throughout different genomes', sub='Gene Cluster (clust_id: 22_1079950_32)')
 #text(cex=.6, x=x-1, y=-2, names(tmpdat) , xpd=TRUE, srt=45) # for rotated x-labels, put xaxt='n' into plot when in use!
@@ -30,15 +33,40 @@ mat <- data.matrix(dat)
 rownames(mat) <- dat[,1]
 mat <- mat[,-1]
 
-#my_palette <- colorRampPalette(c("yellow", "red"))(n = 1000) # for costum colors
+mat[is.na(mat)] <- 0
 
+
+#my_palette <- colorRampPalette(c("yellow", "red"))(n = 1000) # for costum colors
+b <- c(0,0.2,0.4,0.6,0.8,1)*100
+
+colfunc <- c("white"  ,"#74A9CF", "#3690C0" ,"#0570B0","#045A8D")
+#colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 pdf('map_orgs.pdf')
 heatmap.2(mat,
-        main = paste0("HM of section",description[1], "and cutoffs", description[2], description[3])
+        main = paste0("HM of section"," ",description[1], "\n", "with more than ", description[2],'% of members \n and at least ', description[3], " members"),
         dendrogram="none",
         trace = "none",
         na.color ="white",
-        col=brewer.pal(7, "YlOrRd"),
+        col=colfunc,
         Rowv=NA,
-        Colv=NA)
+        Colv=NA
+        srtRow = 45,
+        srtCol = 45,
+        cexRow = 0.65,
+        cexCol = 0.65
+        )
+dev.off()
+
+pdf('map_orgs_clustered.pdf')
+heatmap.2(mat,
+        main = paste0("HM of section", " ",description[1], "\n", "with more than ", description[2],"% of members \n and at least ", description[3], " members"),
+        dendrogram="both",
+        trace = "none",
+        na.color ="white",
+        col=colfunc,
+        srtRow = 45,
+        srtCol = 45,
+        cexRow = 0.65,
+        cexCol = 0.65
+        )
 dev.off()

@@ -18,13 +18,19 @@ parser.add_argument("-clean2", "-c2", required=False, action='store_true', help=
 #parser.add_argument("-stats", "-s", required=False, action='store_true', help="Compile stats table")
 
 parser.add_argument("--out", "-o", required=False, default = "org_shared_gc.csv", help="Name of output file")
-parser.add_argument("-R", default="org_shared_gc.R", required=False, help="Name of R script, org_shared_gc.R")
+#parser.add_argument("-R", default="org_shared_gc.R", required=False, help="Name of R script, org_shared_gc.R")
+parser.add_argument("--sec", required=False, default = "Nigri", help="Section name")
+parser.add_argument("--plot","-p", required=False, action='store_true', help="Executes R plotting functions on data")
+parser.add_argument("--cutoff", "-cut",type = int, required=False, default = 0, choices=[0,5,10], action='store_true', help="Select a cutoff for gene cluster sizes, defaults to 0")
 
 args 	= parser.parse_args()
 clean1 = args.clean1
 clean2 = args.clean2
 outfile = args.out
-rscript = args.R
+plot = args.plot
+cutoff = args.cutoff
+section = args.sec
+#rscript = args.R
 startTime = datetime.now() # record runtime
 
 '''------------------------------------------------------------------
@@ -131,12 +137,85 @@ SELECT q_seqid, h_seqid, max(pident[,h_org]) as max FROM antismash2blast where q
 
 # reduce hits by cutoff, coverage
 # add coverage columns
+if clean3:
+	print "# INFO: Reducing antismash2blast to best match for each organism-cluster pair - antismash2blast_reduced"
+	print "# INFO: Dropping and recreating antismash2blast_reduced"
+
+	cursor.execute("DROP TABLE IF EXISTS antismash2blast_reduced")
+
+	query="CREATE TABLE antismash2blast_reduced as \
+		select * from (\
+		select ta.* from antismash2blast as ta\
+		join ( select q_seqid, h_seqid, h_org, max(pident) as max from antismash2blast group by q_seqid, h_org) as tb \
+		on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and  pident=max) as tc group by q_seqid, h_org"
+	executeQuery(cursor, query)
+	
+
+query = "SELECT count(distinct(sm_protein_id)) from antismash2blast_reduced;"
+(columns, smGenesRed) = executeQuery(cursor, query)
+
+query = "SELECT count(distinct(sm_protein_id)) from antismash2blast;"
+(columns, smGenes) = executeQuery(cursor, query)
+
+if smGenesRed and smGenes:
+	if smGenesRed[0][0] != smGenes[0][0] :
+		print "# WARNING: number of genes in antismash2blast_reduced and antismash2blast are not equal, reduced= %s, %s" % (smGenesRed[0][0], smGenes[0][0]) 
+		print "# INFO: Executing diagnose query - this will take some time" 
+		diagnose_query="SELECT abp from \
+					(SELECT distinct(sm_protein_id) as abp from antismash2blast) as ta\
+					left join \
+					(SELECT distinct(sm_protein_id) as abrp from antismash2blast_reduced) as tb\
+					on abp=abrp where (abrp is NULL);"
+		(columns, abGenes) = executeQuery(cursor, diagnose_query)				
+		missingGenes = [o for o in abGenes]
+		#print missingGenes
+
+	else:
+		print "# INFO: number of antismash genes in antismash2blast_reduced and antismash2blast %s" % smGenesRed[0] 
+		
+
+# If not specified to create table test if the table actually does exist
+if not cursor.execute("Show tables LIKE 'antismash2blast'") or not cursor.execute("Show tables LIKE 'antismash2blast_reduced'"):
+	sys.exit("# ERROR: table does not exist, re-run with -clean2 option")
+
+'''------------------------------------------------------------------
+# hitsPerOrg
+------------------------------------------------------------------'''
+
+cursor.execute("DROP TABLE IF EXISTS hitsPerOrgPerClusterGene")
+
+query = "CREATE TABLE hitsPerOrgPerClusterGene as\
+		SELECT ta.*, ROUND(nrHits/clust_size, 2) as clustCov, O1.section as sec1, O2.section as sec2  \
+		from (select org_id, clust_id, name, h_org, count(*) as nrHits,\
+		CONVERT(SUBSTRING_INDEX(clust_id, '_', -1), UNSIGNED INT) as clust_size from antismash2blast_reduced group by clust_id, h_org ) as ta \
+		join organism O1 using (name)\
+		join organism O2 on (O2.name=h_org)\
+		where clust_size >= " + str(csize)+";"
+executeQuery(cursor, query)
+
+query = "DELETE FROM hitsPerOrgPerClusterGene where name = 'Aspac1' and h_org = 'Aspac1';" # Add Afoetidus here if it appears again
+
+executeQuery(cursor, query)
+
+query = "select *, count(*) as shared_gc from hitsPerOrgPerClusterGene where clustCov >= 0.67 and sec1 = %s and sec2 = %s and clust_size > %i group  by name, h_org ;" % (section, section, cutoff)
+#cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
+
+#print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
 
 
+# TODO: Inserrt mysql cutoff
+
+'''------------------------------------------------------------------
+# Plotting
+------------------------------------------------------------------'''
 
 
+def make_plot(outfile):
+	print "# INFO: running Rscript"
+	os.system("R CMD BATCH '--args %s %s %s' aspmine_analysis_lengths.R test.out " % (outfile, cutoff, section)
 
-
+if plot:
+	make_plot(outfile)
 
 
 
