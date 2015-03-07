@@ -63,8 +63,8 @@ startTime = datetime.now() # record runtime
 # Get command line arguments
 #------------------------------------------------------------------
 parser = argparse.ArgumentParser( formatter_class=SmartFormatter, 
-								 usage='%(prog)s -filetype filetype -action action -source filename\n'
-								 "Example: python %(prog)s -dbname aspminedb -filetype blast -action test -source AacidusVsAindologenusTable.txt\n" )
+								 usage='%(prog)s -replace [no value] -action action -source filename -dbname [database name] -err [name of error log file]\n'
+								 "Example: python %(prog)s -dbname aspminedb -action test -source AacidusVsAindologenusTable.txt -err errorblaste-10.log\n" )
 
 #------------------------------------------------------------------
 # Choose if data should be loaded or only tested
@@ -77,7 +77,7 @@ parser.add_argument( '-action' , required=False, default = "test", choices=['loa
 parser.add_argument( "-source",	"-s",required=True,	help="R|File or directoryname, example: -source AacidusVsAindologenusTable.txt" )
 parser.add_argument( "-dbname",		required=False,	help="R|Database name", default = "aspminedb" )
 parser.add_argument("-replace", required=False, action='store_true', help="Replace data if file already loaded")
-parser.add_argument("-err", "-e", required=False, default = "default", help="Replace data if file already loaded")
+parser.add_argument("-err", "-e", required=False, default = "default", help="Name of error log file")
 
 args = parser.parse_args()
 replace = args.replace
@@ -216,6 +216,7 @@ def process_lines(file_lines, filename):
 	counter = 0
 	totalcounter = 0
 	loadstamp = time.strftime("%c")
+	shortcounter = 0
 
 	#------------------------------------------------------------------
 	# Get values for each row
@@ -268,11 +269,13 @@ def process_lines(file_lines, filename):
 				pident, q_len, q_start, q_end, h_len, h_start, h_end, evalue, bitscore , loadstamp, str(q_cov), str(h_cov))
 
 		values = [re.sub( r"^0+", "", i ) for i in values]
-		values_to_insert.append( values ) # Create sets of lists of values
-
+		if q_cov >= 50 and h_cov >= 50:
+			values_to_insert.append( values ) # Create sets of lists of values
+		else:
+			shortcounter += 1	
 
 		# Only load data if action is specified
-		if args.action == "load" and ( counter == 6000 or totalcounter == len( file_lines ) ):
+		if args.action == "load" and ( counter == 11000 or totalcounter == len( file_lines ) ):
 			#print values_to_insert[0]
 			if totalcounter % 1000 == 0 : print "# INFO: Inserting record number %s" % totalcounter
 			elif totalcounter == len(file_lines): print "# INFO: Inserting record number %s" % totalcounter
@@ -295,6 +298,8 @@ def process_lines(file_lines, filename):
 	if args.action == "test" and not values:
 		print "# WARNING: testing file, example values is empty"
 
+	print "# INFO shortcount %s , totalcounter %s , fraction %s" % (shortcounter, totalcounter, (float(shortcounter)/float(totalcounter)*100))
+	
 	print "# FINISHED BLAST file: %s with total number of records %s" % ( filename , totalcounter )
 
 # END process_lines

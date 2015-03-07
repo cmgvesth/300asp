@@ -265,7 +265,7 @@ if anaLoop:
 	cursor2csv(columns, result, "t_antismashLoopAntismash.csv")
 
 	print "# INFO: wrote results to t_antismashLoopAntismash.csv"
-	print "# INFO Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTimeanaLoop)
+	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTimeanaLoop)
 
 	print "# INFO: running Rscript"
 	os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
