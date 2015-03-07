@@ -23,8 +23,8 @@ parser.add_argument("--ana2", "-a2", required=False, action='store_true', help="
 parser.add_argument("--ana3", "-a3", required=False, action='store_true', help="Find which clusters are found in most organisms")
 parser.add_argument("--bestclusters", "-bc", required=False, action='store_true', help="Find which clusters are found in most organisms, TOP 20, remember cutoffs!")
 parser.add_argument("--uniqueclusters", "-uc", required=False, action='store_true', help="Find which clusters are unique among organisms, remember cutoffs!")
-parser.add_argument("--maximus", "-max", required=False, action='store_true', help="Calculates max values for gene clusters")
-parser.add_argument("--done", "-d", required=False, action='store_true', help="last analysis")
+parser.add_argument("--max_gc_abundance", "-max", required=False, action='store_true', help="Calculates max values for gene clusters")
+parser.add_argument("--normalize", "-d", required=False, action='store_true', help="Normalizes results from analysis 2 for heatmap")
 #TODO: Fix type and choices
 
 args = parser.parse_args()
@@ -38,7 +38,7 @@ ana2 = args.ana2
 ana3 = args.ana3
 best = args.bestclusters
 unique = args.uniqueclusters
-maximus = args.maximus
+max_gc_abundance = args.max_gc_abundance
 done = args.done
 
 
@@ -76,7 +76,7 @@ def asp_con(path):
 
 cursor = asp_con('remote')
 
-if maximus:
+if max_gc_abundance:
 	query ="CREATE TABLE testing_max as SELECT q_orgname, max(shared) as maxsh from (SELECT q_orgname, h_orgname, count(*) as shared from(SELECT q_clustid, q_clust_size, q_orgname, h_orgname, h_clust_backbone, h_clust_protein_id, members from (SELECT *, count(*) as members from antismashLoopAntismash where h_clust_backbone is not null group by q_clustid, q_orgname, h_orgname, h_clust_backbone) ta where members > q_clust_size*%f and q_clust_size>%i) tb group by q_orgname ,h_orgname) tc group by q_orgname;" % (cutoff1, cutoff2)
 
 if ana1:
@@ -86,7 +86,7 @@ if ana1:
 		where members > q_clust_size*%f and q_clust_size>%i;" % (cutoff1, cutoff2)
 
 if ana2:
-	query =" CREATE TABLE val as SELECT q_orgname, h_orgname, count(*) as shared from(\
+	query =" CREATE TABLE t_gc_shared_count as SELECT q_orgname, h_orgname, count(*) as shared from(\
 		SELECT q_clustid, q_clust_size, q_orgname, h_orgname, h_clust_backbone, h_clust_protein_id, members from (\
 		SELECT *, count(*) as members from antismashLoopAntismash\
 		where h_clust_backbone is not null group by h_clust_backbone) ta\
@@ -104,7 +104,7 @@ if unique:
 
 # TODO finish here!
 if done:
-	query = "SELECT val.q_orgname, val.h_orgname, (val.shared/testing_max.maxsh)*100 as norm_shared  from val left join testing_max ON val.q_orgname = testing_max.q_orgname ;"
+	query = "SELECT t_gc_shared_count.q_orgname, t_gc_shared_count.h_orgname, (t_gc_shared_count.shared/testing_max.maxsh)*100 as norm_shared  from t_gc_shared_count left join testing_max ON t_gc_shared_count.q_orgname = testing_max.q_orgname ;"
 
 print query
 
