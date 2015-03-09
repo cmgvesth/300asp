@@ -67,3 +67,7 @@ __pycache__/
 .pydevproject
 *.RData
 *.Rhistory
+
+# Sequence files #
+##################
+*.gbk

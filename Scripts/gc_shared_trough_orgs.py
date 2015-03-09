@@ -20,7 +20,6 @@ parser.add_argument("--cutoff1", "-c1", type = float, required=False, help="Sele
 parser.add_argument("--cutoff2", "-c2", type = int, required=False, default = 0, help="Select a cutoff for gene cluster sizes, defaults to 0")
 parser.add_argument("--ana1", "-a1", required=False, action='store_true', help="Overview of Clusters")
 parser.add_argument("--ana2", "-a2", required=False, action='store_true', help="Clusters shared among organisms")
-parser.add_argument("--ana3", "-a3", required=False, action='store_true', help="Find which clusters are found in most organisms")
 parser.add_argument("--bestclusters", "-bc", required=False, action='store_true', help="Find which clusters are found in most organisms, TOP 20, remember cutoffs!")
 parser.add_argument("--uniqueclusters", "-uc", required=False, action='store_true', help="Find which clusters are unique among organisms, remember cutoffs!")
 parser.add_argument("--max_gc_abundance", "-max", required=False, action='store_true', help="Calculates max values for gene clusters")
