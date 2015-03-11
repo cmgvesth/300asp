@@ -162,7 +162,7 @@ if clean3:
 		select * from (\
 		select ta.* from t_antismash2blast as ta\
 		join ( select q_seqid, h_seqid, h_org, max(pident) as max from t_antismash2blast group by q_seqid, h_org) as tb \
-		on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and  pident=max) as tc group by q_seqid, h_org"
+		on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and  pident=max) as tc group by q_seqid, h_org;"
 	executeQuery(cursor, query)
 
 	print "# INFO Runtime t_antismash2blast_reduced: ", (datetime.now()-startTimet_antismash2blast_reduced)
