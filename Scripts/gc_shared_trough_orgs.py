@@ -27,8 +27,9 @@ parser.add_argument("--bestclusters", "-bc", required=False, action='store_true'
 parser.add_argument("--uniqueclusters", "-uc", required=False, action='store_true', help="Find which clusters are unique among organisms, remember cutoffs!")
 parser.add_argument("--singleclusters", "-single", required=False, action='store_true', help="Pass a list of clusters to be analyzed seperately and illustrate their distribution in a stacked boxplot, right now it needs a list as input")
 parser.add_argument("--max_gc_abundance", "-max", required=False, action='store_true', help="Calculates max values for gene clusters")
-parser.add_argument("--normalize", "-d", required=False, action='store_true', help="Normalizes results from analysis 2 for heatmap")
+parser.add_argument("--normalize", "-norm", required=False, action='store_true', help="Normalizes results from analysis 2 for heatmap")
 parser.add_argument("--interpro", "-ipr", required=False, action='store_true', help="TODO connection to Interpro table")
+parser.add_argument("--save", "-save", required=False, action='store_true', help="Save a csv file of the query")
 #TODO: Fix type and choices
 
 args = parser.parse_args()
@@ -39,7 +40,9 @@ cutoff2 = args.cutoff2
 plot = args.plot
 ana1 = args.ana1
 ana2 = args.ana2
+normalize = args.normalize
 interpro = args.interpro
+save = args.save
 
 best = args.bestclusters
 single = args.singleclusters
@@ -56,8 +59,8 @@ section = 'Nigri' # TODO Needs implementation in mysql, here the table only has 
 print cutoff1
 print cutoff2
 print section
-# IMPORTANT!  DELETE FROM antismashLoopAntismash where q_orgname = 'Aspac1' and h_orgname = 'Aspac1'; bc Aspac 1 entries are still weird...
-def make_plot(outfile):
+# IMPORTANT!  DELETE FROM antismashLoopAntismash where q_orgname = 'Aspac1' and h_realname, = 'Aspac1'; bc Aspac 1 entries are still weird...
+def make_heatmap(outfile):
 	print "# INFO: running Rscript"
 	try:
 		os.system("R CMD BATCH '--args %s %s %s %s' gc_shared_through_orgs.R test.out" % (outfile, section, cutoff1*100, cutoff2))
@@ -90,20 +93,24 @@ def asp_con(path):
 cursor = asp_con('remote')
 
 if max_gc_abundance:
-	query ="CREATE TABLE testing_max as SELECT q_orgname, max(shared) as maxsh from (SELECT q_orgname, h_orgname, count(*) as shared from(SELECT q_clustid, q_clust_size, q_orgname, h_orgname, h_clust_backbone, h_clust_protein_id, members from (SELECT *, count(*) as members from antismashLoopAntismash where h_clust_backbone is not null group by q_clustid, q_orgname, h_orgname, h_clust_backbone) ta where members > q_clust_size*%f and q_clust_size>%i) tb group by q_orgname ,h_orgname) tc group by q_orgname;" % (cutoff1, cutoff2)
+	cursor.execute("DROP TABLE IF EXISTS t_testing_max")
+	query ="CREATE TABLE t_testing_max as select q_realname, max(shared) as max_shared from (select q_realname, h_realname, q_clustid, count(*) as shared from t_antismashLoopAntismashCandidates where clustCov >%f and q_clust_size > %i and q_sec = 'Nigri' and h_sec = 'Nigri' and q_realname != 'aculeatus' and h_realname != 'aculeatus' group by q_realname, h_realname) ta group by q_realname;" % (cutoff1, cutoff2)
 
 if ana1:
-	query = "SELECT q_clustid, q_clust_size, q_orgname, h_orgname, h_clust_backbone, h_clust_protein_id, members from (\
+	query = "SELECT q_clustid, q_clust_size, q_realname, h_realname, h_clust_backbone,  members from (\
 		SELECT *, count(*) as members from antismashLoopAntismash\
-		where h_clust_backbone is not null group by q_clustid, q_orgname, h_orgname, h_clust_backbone) ta\
+		where h_clust_backbone is not null group by q_clustid, q_realname, h_realname, h_clust_backbone) ta\
 		where members > q_clust_size*%f and q_clust_size>%i;" % (cutoff1, cutoff2)
-
+#h_clust_protein-id not in Candidates!
 if ana2:
-	query =" CREATE TABLE t_gc_shared_count as SELECT q_orgname, h_orgname, count(*) as shared from(\
-		SELECT q_clustid, q_clust_size, q_orgname, h_orgname, h_clust_backbone, h_clust_protein_id, members from (\
-		SELECT *, count(*) as members from antismashLoopAntismash\
-		where h_clust_backbone is not null group by h_clust_backbone) ta\
-		where members > q_clust_size*%f and q_clust_size>%i) tb group by q_orgname ,h_orgname;" % (cutoff1, cutoff2)
+	cursor.execute("DROP TABLE IF EXISTS t_gc_shared_count")
+	query = " CREATE TABLE t_gc_shared_count AS SELECT q_realname, h_realname, q_clustid, count(*) as shared from t_antismashLoopAntismashCandidates where clustCov >%f and q_clust_size > %i and q_sec = 'Nigri' and h_sec = 'Nigri' group by q_realname, h_realname;" % (cutoff1, cutoff2)
+
+# old
+#		SELECT q_clustid, q_clust_size, q_realname, h_realname, h_clust_backbone, members from (\ #h_clust_protein-id not in Candidates!
+#		SELECT *, count(*) as members from antismashLoopAntismash\
+#		where h_clust_backbone is not null group by h_clust_backbone) ta\
+#		where members > q_clust_size*%f and q_clust_size>%i) tb group by q_realname ,h_realname,;" % (cutoff1, cutoff2)
 
 if best:
 	query ="SELECT q_clustid, count(*) as found from (SELECT * from t_antismashLoopAntismashCandidates\
@@ -114,6 +121,9 @@ if unique:
 	query = " SELECT * from (SELECT q_clustid, count(*) as found from (\
 		SELECT * from t_antismashLoopAntismashCandidates where h_clust_backbone is not null and clustCov > %f and q_clust_size>%i\
 		 group by h_clust_backbone) ta group by q_clustid order by found) tb where found =1;" % (cutoff1, cutoff2)
+
+if normalize:
+	query = "SELECT t_gc_shared_count.q_realname, t_gc_shared_count.h_realname, (t_gc_shared_count.shared/t_testing_max.max_shared)*100 as norm_shared from t_gc_shared_count join t_testing_max ON t_gc_shared_count.q_realname = t_testing_max.q_realname ;"
 
 if single:
 
@@ -152,7 +162,7 @@ if single:
 
 # TODO finish here!
 #if done:
-#	query = "SELECT t_gc_shared_count.q_orgname, t_gc_shared_count.h_orgname, (t_gc_shared_count.shared/testing_max.maxsh)*100 as norm_shared  from t_gc_shared_count left join testing_max ON t_gc_shared_count.q_orgname = testing_max.q_orgname ;"
+#	query = "SELECT t_gc_shared_count.q_orgname, t_gc_shared_count.h_realname,, (t_gc_shared_count.shared/testing_max.maxsh)*100 as norm_shared  from t_gc_shared_count left join testing_max ON t_gc_shared_count.q_orgname = testing_max.q_orgname ;"
 
 
 # TODO finish here!!!
@@ -171,7 +181,7 @@ if interpro:
 			print "Error in Analysis"
 
 #print query
-if single == False and single_plots == False:
+if plot == False:
 	try:
 		cursor.execute(query)
 		result = cursor.fetchall()
@@ -179,6 +189,7 @@ if single == False and single_plots == False:
 	except:
 		print "Error in Analysis"
 
+if save:
 	f = open(outfile,'wb')
 	writer = csv.writer(f, dialect = 'excel')
 	writer.writerows(result)
@@ -189,7 +200,7 @@ if single == False and single_plots == False:
 ------------------------------------------------------------------'''
 
 if plot:
-	make_plot(outfile)
+	make_heatmap(outfile)
 
 if single_plots:
 	with open('best.csv') as f:
