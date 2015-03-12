@@ -30,6 +30,7 @@ parser.add_argument("--max_gc_abundance", "-max", required=False, action='store_
 parser.add_argument("--normalize", "-norm", required=False, action='store_true', help="Normalizes results from analysis 2 for heatmap")
 parser.add_argument("--interpro", "-ipr", required=False, action='store_true', help="TODO connection to Interpro table")
 parser.add_argument("--save", "-save", required=False, action='store_true', help="Save a csv file of the query")
+parser.add_argument("--tcve_plot","-tp", required=False, action='store_true', help="Executes R plotting functions on single clusters")
 #TODO: Fix type and choices
 parser.add_argument("--tcve_custom", "-tc", required=False, action='store_true', help="custom for tcve based on single_bar_plots")
 args = parser.parse_args()
@@ -44,7 +45,7 @@ normalize = args.normalize
 interpro = args.interpro
 save = args.save
 tcve_custom = args.tcve_custom
-
+tcve_plot = args.tcve_plot
 best = args.bestclusters
 single = args.singleclusters
 single_plots = args.single_plots
@@ -266,6 +267,34 @@ if tcve_custom:
 		reader = csv.reader(f, dialect = 'excel-tab')
 		bestHits = list(reader)
 
+if tcve_plot:
+	score = 0
+	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
+		reader = csv.reader(f, dialect = 'excel-tab')
+		bestHits = list(reader)
+
+	for i in bestHits:
+		clust = i[0]
+		print(clust)
+		query = "SELECT real_name FROM organism WHERE org_id = '%s'" % clust[:2]
+		try:
+			cursor.execute(query)
+			org = cursor.fetchall()[0][0]
+
+		except:
+			print "cannot find this Organism"
+
+		try:
+			if clust[-2] == '_':
+				completeMembers = clust[-1]
+			else:
+				completeMembers = clust[-2:]
+		except:
+			print "Cannot convert number of complete members from cluster id"
+		print completeMembers
+		single_bar_plots('single_%s.csv' % clust, clust, score, org, completeMembers)
+
+'''
 	for i in bestHits:
 		clust = i[0]
 		query = "SELECT real_name FROM organism WHERE org_id = '%s'" % clust[:2]
@@ -290,7 +319,7 @@ if tcve_custom:
 			os.system("R CMD BATCH '--args %s %s %s %s' gc_plot_custom.R test.out" % (infile, clust, org, completeMembers))
 		except:
 			print "Cannot connect to R"
-
+'''
 #if single:
 #	print "# INFO: running Rscript"
 #	try:

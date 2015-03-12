@@ -13,7 +13,7 @@ threshold = as.numeric(description[4])*0.7
 tmp = read.csv(infile)
 data <- tmp[order(tmp$X),]
 
-pdf(paste0('/home/seth/Dropbox/seth-1/gc_dist_',description[1],'.pdf'))
+pdf(paste0('/home/seth/Dropbox/seth-1/special_gc/gc_dist_',description[1],'.pdf'))
 
 DF1 <- melt(data, id.var="X")
 
