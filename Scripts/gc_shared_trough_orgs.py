@@ -31,7 +31,7 @@ parser.add_argument("--normalize", "-norm", required=False, action='store_true',
 parser.add_argument("--interpro", "-ipr", required=False, action='store_true', help="TODO connection to Interpro table")
 parser.add_argument("--save", "-save", required=False, action='store_true', help="Save a csv file of the query")
 #TODO: Fix type and choices
-
+parser.add_argument("--tcve_custom", "-tc", required=False, action='store_true', help="custom for tcve based on single_bar_plots")
 args = parser.parse_args()
 
 outfile = args.out
@@ -43,6 +43,7 @@ ana2 = args.ana2
 normalize = args.normalize
 interpro = args.interpro
 save = args.save
+tcve_custom = args.tcve_custom
 
 best = args.bestclusters
 single = args.singleclusters
@@ -226,6 +227,69 @@ if single_plots:
 			print "Cannot convert number of complete members from cluster id"
 		print completeMembers
 		single_bar_plots('single_%s.csv' % clust, clust, score, org, completeMembers)
+
+if tcve_custom:
+	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
+		reader = csv.reader(f, dialect = 'excel-tab')
+		bestHits = list(reader)
+
+	for i in bestHits:
+		clust = i[0]
+		print(clust)
+		query = " SELECT organism.real_name, tx.In_cluster FROM (\
+			SELECT org_id, In_cluster FROM (SELECT a2b.clust_id AS q_clust_id, concat(smash.org_id, '_', smash.clust_backbone, '_', smash.clust_size) AS h_clust_id, smash.org_id, count(*) AS In_cluster\
+			from t_antismash2blast_reduced AS a2b JOIN antismash AS smash on h_seqkey = smash.sm_protein_id WHERE a2b.clust_id = '%s' and smash.org_id\
+			GROUP BY h_clust_id) ta ORDER BY org_id, In_cluster DESC) tx join organism on tx.org_id = organism.org_id;" % (str(clust))
+		try:
+			cursor.execute(query)
+			result = cursor.fetchall()
+		except:
+			print "Error in Analysis"
+
+		genome = {}
+
+		for line in result:
+			a,b = line
+			if a in genome:
+				genome[a].append(int(b))
+			else:
+				genome[a] = list()
+				genome[a].append(int(b))
+			
+	# To do: If runs slow, improve here by filling up with NAs before to avoid transposing
+		gframe = pd.DataFrame.from_dict(genome, orient='index', dtype=float)
+		#gframe = gframe.transpose()
+		gframe.to_csv('single_%s.csv' % clust)
+		infile = 'single_%s.csv' % clust
+
+	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
+		reader = csv.reader(f, dialect = 'excel-tab')
+		bestHits = list(reader)
+
+	for i in bestHits:
+		clust = i[0]
+		query = "SELECT real_name FROM organism WHERE org_id = '%s'" % clust[:2]
+		try:
+			cursor.execute(query)
+			org = cursor.fetchall()[0][0]
+
+		except:
+			print "cannot find this Organism"
+
+		try:
+			if clust[-2] == '_':
+				completeMembers = clust[-1]
+			else:
+				completeMembers = clust[-2:]
+		except:
+			print "Cannot convert number of complete members from cluster id"
+		print completeMembers
+
+		print "# INFO: running Rscript"
+		try:
+			os.system("R CMD BATCH '--args %s %s %s %s' gc_plot_custom.R test.out" % (infile, clust, org, completeMembers))
+		except:
+			print "Cannot connect to R"
 
 #if single:
 #	print "# INFO: running Rscript"

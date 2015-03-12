@@ -1,3 +1,5 @@
+# Adapted for tcve
+
 require("argparse")
 require("ggplot2")
 require("reshape")
@@ -6,14 +8,14 @@ args <- commandArgs(TRUE)
 infile <- args[1]
 print(infile)
 
-description <- args[2:5] # Contains section, cutoff1 and cutoff 2
+description <- args[2:4] # Contains section, cutoff1 and cutoff 2
 print(description)
 
-threshold = as.numeric(description[4])*0.7
+threshold = as.numeric(description[3])*0.7
 tmp = read.csv(infile)
 data <- tmp[order(tmp$X),]
 
-pdf(paste0('/home/seth/Dropbox/seth-1/gc_dist_',description[1],'.pdf'))
+pdf(paste0('/home/seth/Dropbox/seth-1/special_gc/gc_dist_',description[1],'.pdf'))
 
 DF1 <- melt(data, id.var="X")
 
@@ -29,7 +31,7 @@ coord_flip()+
 geom_hline(aes(yintercept=threshold), colour="#990000", linetype="dashed")+
 scale_fill_manual(values=tcveCols, guide=FALSE) + xlab("Aspergillus")+
 ylab("Members in gene cluster(s)")+
-ggtitle(paste0("Distribution of gene cluster ",description[1]," from Aspergillus ", description[3], "\nPredicted in ", description[2]," organisms"))+
+ggtitle(paste0("Distribution of gene cluster ",description[1]," from Aspergillus ", description[2]))+
 theme(axis.text = element_text(size = 8, colour="grey20"), plot.title = element_text(size=rel(0.8)))
 dev.off()
 
