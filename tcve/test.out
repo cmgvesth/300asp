@@ -17,6 +17,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+[Previously saved workspace restored]
+
 > #########################################################
 > ### A) Installing and loading required packages
 > #########################################################
@@ -24,7 +26,7 @@ Type 'q()' to quit R.
 > args <- commandArgs(TRUE)
 > infile <- args[1]
 > print (infile)
-[1] "antismashLoopAntismash.csv"
+[1] "t_antismashLoopAntismash.csv"
 > 
 > 
 > if (!require("gplots")) {
@@ -277,4 +279,4 @@ null device
 > 
 > proc.time()
    user  system elapsed 
- 10.119   0.075  10.189 
+ 10.650   0.095  10.832 

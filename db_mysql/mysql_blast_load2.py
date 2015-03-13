@@ -151,6 +151,7 @@ if not cursor.execute("SHOW TABLES LIKE 'blast';"):
 	  `q_cov` decimal(10,2) DEFAULT NULL,\
   	  `h_cov` decimal(10,2) DEFAULT NULL,\
 	  PRIMARY KEY (`bitscore`,q_org,q_seqkey,h_org, h_seqkey,`q_start`, h_start),\
+	  KEY `qhorg_i` (q_org, h_org),\
 	  KEY `q_org` (`q_org`),\
 	  KEY `q_seqkey` (`q_seqkey`),\
 	  KEY `h_org` (`h_org`),\
