@@ -20,8 +20,8 @@ subdat <- tmpdat #[order(tmpdat$V1, tmpdat$V2), ]
 
 
 #qplot(tmpdat$V10, ..density.., data=tmpdat, geom="density", fill=tmpdat$V3, position="stack")
-
-pdf('density_orgs.pdf')
+#pdf(paste0('/home/seth/Dropbox/seth-1/gc_dist_',description[1],'.pdf'))
+pdf(paste0('/home/seth/Dropbox/seth-1/heatmap/density_orgs_', description[2], '_',description[3],'.pdf'))
 m<- ggplot(subdat, aes(x=subdat$V3))
 p<- m + geom_density(aes(fill=factor(subdat$V1)), size=2, alpha=0.3) #+ coord_cartesian(xlim=c(0, 20))
 print(p)
@@ -41,32 +41,35 @@ b <- c(0,0.2,0.4,0.6,0.8,1)*100
 
 colfunc <- c("white"  ,"#74A9CF", "#3690C0" ,"#0570B0","#045A8D")
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
-pdf('map_orgs.pdf')
+par(cex.main=0.5)
+pdf(paste0('/home/seth/Dropbox/seth-1/heatmap/map_orgs_',description[2], '_',description[3],'.pdf'))
 heatmap.2(mat,
-        main = paste0("HM of section"," ",description[1], "\n", "with more than ", description[2],'% of members \n and at least ', description[3], " members"),
+        main = paste0("Shared GC among"," ",description[1], "\n", "with more than ", description[2],'% of members \n and at least ', description[3], " members"),
         dendrogram="none",
         trace = "none",
         na.color ="white",
         col=colfunc,
         Rowv=NA,
-        Colv=NA
-        srtRow = 45,
-        srtCol = 45,
-        cexRow = 0.65,
-        cexCol = 0.65
+        Colv=NA,
+        #srtRow = 45,
+        #srtCol = 45,
+        cexRow = 0.8,
+        cexCol = 0.8,
+        margins = c(8,8)
         )
 dev.off()
 
-pdf('map_orgs_clustered.pdf')
+pdf(paste0('/home/seth/Dropbox/seth-1/heatmap/map_orgs_clustered_', description[2], '_',description[3],'.pdf'))
 heatmap.2(mat,
-        main = paste0("HM of section", " ",description[1], "\n", "with more than ", description[2],"% of members \n and at least ", description[3], " members"),
+        main = paste0("Shared GC among", " ",description[1], "\n", "with more than ", description[2],"% of members \n and at least ", description[3], " members"),
         dendrogram="both",
         trace = "none",
         na.color ="white",
         col=colfunc,
-        srtRow = 45,
-        srtCol = 45,
-        cexRow = 0.65,
-        cexCol = 0.65
+        #srtRow = 45,
+        #srtCol = 45,
+        cexRow = 0.8,
+        cexCol = 0.8,
+        margins = c(8,8)
         )
 dev.off()
