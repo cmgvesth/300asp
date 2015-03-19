@@ -32,6 +32,8 @@ parser.add_argument("-highcut", "-hc", required=False, default = "80", help="Cut
 """ TABLES """
 parser.add_argument("-clean1", "-c1", required=False, action='store_true', help="Create protein count table from table proteins")
 parser.add_argument("-clean2", "-c2", required=False, action='store_true', help="Create all counts table from table protein count and blast")
+parser.add_argument("-clean3", "-c3", required=False, action='store_true', help="Create cut counts table from table protein count and blast")
+parser.add_argument("-force", "-f", required=False, action='store_true', help="Force to create all counts table from table protein count and blast")
 
 """ ANALYSIS """
 parser.add_argument("-allCounts", "-ac", required=False, action='store_true', help="Get numbers for all hits")
@@ -46,6 +48,7 @@ highcut	= args.highcut
 
 clean1 = args.clean1
 clean2 = args.clean2
+clean3 = args.clean3
 
 allCounts	= args.allCounts
 cutCounts	= args.cutCounts
@@ -63,8 +66,8 @@ print "#--------------------------------------------------------------\n\
 # Cutoff for highest coverage id\t: %s\n\
 # Analysis, get numbers for all hits (-allCounts)\t\t\t: %s\n\
 # Analysis, get numbers for hits that fullfill the cutoffs (-cutCounts)\t: %s\n\
-# Recreate t_proteinCounts\t: %s\n\
-# Recreate t_allCounts\t: %s\n\
+# Recreate t_proteinCounts -clean1\t: %s\n\
+# Recreate t_allCounts -clean2 only with -force\t: %s\n\
 #--------------------------------------------------------------" % (dbname, pcut, lowcut, highcut, allCounts, cutCounts, clean1, clean2)
 
 '''------------------------------------------------------------------
@@ -87,6 +90,24 @@ print "# INFO: BLAST table contains %s unique organism pairs, %s q_orgs and %s h
 
 '''------------------------------------------------------------------
 # Create allCounts table
+
+python sharedBlastHits_orgs.py -c2
+#--------------------------------------------------------------
+# ARGUMENTS
+# Database	: aspminedb
+# Cutoff for percent id			: 50
+# Cutoff for lowest coverage id		: 70
+# Cutoff for highest coverage id	: 80
+# Analysis, get numbers for all hits (-allCounts)			: False
+# Analysis, get numbers for hits that fullfill the cutoffs (-cutCounts)	: False
+# Recreate t_proteinCounts	: False
+# Recreate t_allCounts	: True
+#--------------------------------------------------------------
+# INFO: BLAST table contains 0 unique organism pairs, 0 q_orgs and 0 h_orgs
+# INFO: Dropping and re-creating t_allCounts
+# INFO: Creating table t_allCounts from blast
+# INFO Runtime allCounts:  2:19:12.269561
+
 ------------------------------------------------------------------'''
 if clean1:
 	startTime_clean = datetime.now()
@@ -103,28 +124,54 @@ if clean1:
 '''------------------------------------------------------------------
 # Create allCounts table
 ------------------------------------------------------------------'''
-if clean2:
+if clean2 and force:
 	startTime_clean = datetime.now()
 
 	print "# INFO: Dropping and re-creating t_allCounts"
 
 	cursor.execute("DROP TABLE IF EXISTS t_allCounts")
+	#executeQuery(cursor, "CREATE INDEX qh_i ON blast (q_org, h_org)")
 
 	print "# INFO: Creating table t_allCounts from blast"
 	query = "CREATE TABLE t_allCounts as SELECT q_org, h_org, count(distinct(q_seqkey)) as count FROM blast GROUP BY q_org, h_org;"
 	executeQuery( cursor, query )
-	print "# INFO Runtime allCounts: ", (datetime.now()-startTime_clean)	
+	print "# INFO Runtime t_allCounts: ", (datetime.now()-startTime_clean)	
+
+'''------------------------------------------------------------------
+# Create cutCounts table
+CREATE TABLE t_cutCounts as SELECT q_org, h_org, count(distinct(q_seqkey)) as count FROM blast\
+WHERE pident >= 50 and GREATEST(q_cov, h_cov) >= 80 and LEAST(q_cov, h_cov) >= 50\
+GROUP BY q_org, h_org;
+Query OK, 2549 rows affected (18 min 54.82 sec)
+
+------------------------------------------------------------------'''
+if clean3 and force:
+	startTime_clean = datetime.now()
+
+	print "# INFO: Dropping and re-creating t_cutCounts"
+
+	cursor.execute("DROP TABLE IF EXISTS t_cutCounts")
+
+	print "# INFO: Creating table t_cutCounts from blast"
+	query = "CREATE TABLE t_cutCounts as SELECT q_org, h_org, count(distinct(q_seqkey)) as count FROM blast\
+	WHERE pident >= %s and GREATEST(q_cov, h_cov) >= %s and LEAST(q_cov, h_cov) >= %s\
+	GROUP BY q_org, h_org;" % (pcut, highcut, lowcut)
+	executeQuery( cursor, query )
+	print "# INFO Runtime t_cutCounts: ", (datetime.now()-startTime_clean)	
+
 
 '''------------------------------------------------------------------
 # SELECT from allCounts - all
 ------------------------------------------------------------------'''
 if allCounts:
-	print "# INFO: SELECT all hits from allCounts"
+	print "# INFO: SELECT all hits from t_allCounts"
 	st = datetime.now()
-	if not cursor.execute("Show tables LIKE 't_testblast'"):
+	if not cursor.execute("Show tables LIKE 't_allCounts'"):
 		sys.exit("# ERROR: table does not exist, re-run with -clean option")
 
-	query = "SELECT * from allCounts"
+	query = "SELECT t_allCounts.*, pa.pcount as qtotal, pb.pcount as htotal from t_allCounts\
+	join t_proteinCounts pa on q_org=pa.prot_orgkey\
+	join t_proteinCounts pb on h_org=pb.prot_orgkey"
 	(columns, allCounts_nr)	= executeQuery( cursor, query )
 	#print allCounts_nr
 
@@ -146,19 +193,27 @@ if allCounts:
 	uniq_orgs 	= sorted(list(set (uniq_q_orgs + uniq_h_orgs)))
 	
 	hit_matrix = pd.DataFrame(index=uniq_orgs, columns=uniq_orgs)
-	for org in uniq_orgs:
-		if org in t_q_orgs:
-			i  = t_q_orgs.index(org)
-			o2 = t_h_orgs[i]
-		elif org in t_h_orgs:
-			i  = t_h_orgs.index(org)
-			o2 = t_q_orgs[i]
+	print uniq_orgs
+	for org1 in uniq_orgs:
+		#i  = t_h_orgs.index(org1)
+		org2 = t_q_orgs[ t_h_orgs.index(org1) ]
 
-		hit_matrix.iloc[uniq_orgs.index(org), uniq_orgs.index(o2)] = (float(t_shared[i])/float(t_h_total[i]))*100
-		hit_matrix.iloc[uniq_orgs.index(o2), uniq_orgs.index(org)] = (float(t_shared[i])/float(t_q_total[i]))*100
+		hit_matrix.iloc[uniq_orgs.index(org2), uniq_orgs.index(org1)] = 1
+		hit_matrix.iloc[uniq_orgs.index(org1), uniq_orgs.index(org2)] = 1
 
-  	#print hit_matrix			
-	hit_matrix.to_csv('hit_matrix.csv', sep=';',  encoding='utf-8')
+		#hit_matrix.iloc[uniq_orgs.index(org2), uniq_orgs.index(org1)] = (float(t_shared[i])/float(t_q_total[i]))*100
+		#hit_matrix.iloc[uniq_orgs.index(org1), uniq_orgs.index(org2)] = (float(t_shared[i])/float(t_h_total[i]))*100
+
+		#print org, t_q_orgs.index(org)
+		# if org in t_q_orgs:
+		# 	i  = t_q_orgs.index(org)
+		# 	o2 = t_h_orgs[i]
+		# 	hit_matrix.iloc[uniq_orgs.index(o2), uniq_orgs.index(org)] = 0
+		# 	hit_matrix.iloc[uniq_orgs.index(org), uniq_orgs.index(o2)] = 0
+
+
+	#print hit_matrix
+  	hit_matrix.to_csv('hit_matrix.csv', sep=';',  encoding='utf-8')
 	"""
 	hit_matrix = pd.DataFrame(index=uniq_q_orgs, columns=uniq_h_orgs)
 	for org in t_q_orgs:
@@ -198,13 +253,15 @@ if allCounts:
 
 '''------------------------------------------------------------------
 # SELECT from allCounts - cutoffs
+!!!THIS DOES OT WORK!!!
+It will require to re-run the all counts table every time. 
 ------------------------------------------------------------------'''
-
+"""
 if cutCounts:
 	print "# INFO: SELECT cutoff restricted hits from allCounts"
 
 	st = datetime.now()
-	if not cursor.execute("Show tables LIKE 'allCounts'"):
+	if not cursor.execute("Show tables LIKE 't_allCounts'"):
 		sys.exit("# ERROR: table does not exist, re-run with -clean option")
 
 	print "# INFO: selecting cutoff determined hits from allCounts"
@@ -218,7 +275,7 @@ if cutCounts:
 
 	print "# INFO: running Rscript"
 	#os.system("R CMD BATCH '--args cutCounts_nr.csv' blast_antismash_subset.R test.out ")
-
+"""
 """
 
 

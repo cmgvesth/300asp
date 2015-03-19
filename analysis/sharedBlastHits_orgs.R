@@ -27,6 +27,10 @@ tmpdat <- read.csv("hit_matrix.csv", sep=";", header=TRUE, dec=".")
 mat <- (data.matrix(tmpdat[,2:ncol(tmpdat)]))
 rownames(mat) <-  tmpdat[,1]
 
+colfunc <- colorRampPalette(c("white", "green", "blue"))(n = 10)
+heatmap.2((mat), density.info="none", margins =c(10,10), trace = "none",dendrogram="none", na.color="red",Rowv=FALSE, Colv=FALSE, col=colfunc)
+
+
 b <- c(seq(0, 100, by=10))
 colfunc <- brewer.pal((length(b)-1),"RdBu")
 heatmap.2((mat), density.info="none", margins =c(20,20), trace = "none",na.color="white",Rowv=FALSE, Colv=FALSE, col=colfunc, breaks=b)
@@ -34,11 +38,6 @@ heatmap.2((mat), density.info="none", margins =c(20,20), trace = "none",na.color
 b <- c(seq(0, 100, by=5))
 colfunc <- colorRampPalette(c("white", "green", "blue"))(n = (length(b)-1))
 heatmap.2((mat), density.info="none", margins =c(20,20), trace = "none",dendrogram="none", na.color="white",Rowv=FALSE, Colv=FALSE, col=colfunc, breaks=b)
-
-colfunc <- colorRampPalette(c("white", "green", "blue"))(n = 10)
-heatmap.2((mat), density.info="none", margins =c(10,10), trace = "none",dendrogram="none", na.color="red",Rowv=FALSE, Colv=FALSE, col=colfunc)
-
-
 
 
 
