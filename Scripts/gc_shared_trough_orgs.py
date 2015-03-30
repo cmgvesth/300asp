@@ -263,20 +263,31 @@ if tcve_custom:
 		gframe.to_csv('single_%s.csv' % clust)
 		infile = 'single_%s.csv' % clust
 
-	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
-		reader = csv.reader(f, dialect = 'excel-tab')
-		bestHits = list(reader)
+#	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
+#		reader = csv.reader(f, dialect = 'excel-tab')
+#		bestHits = list(reader)
 
 if tcve_plot:
 	score = 0
 	with open('/home/seth/Dropbox/seth-1/barplots_metabolites.tab') as f:
+	# with open('/home/seth/Dropbox/seth-1/test.tab') as f: # just for testing
 		reader = csv.reader(f, dialect = 'excel-tab')
 		bestHits = list(reader)
 
 	for i in bestHits:
 		clust = i[0]
 		print(clust)
-		query = "SELECT real_name FROM organism WHERE org_id = '%s'" % clust[:2]
+# TODO find a regex way? forgot this so some clusters went missing, but it also worked for some, for some reason....
+
+		try:
+			if clust[1] == '_':
+				orga = clust[0]
+			else:
+				orga = clust[:1]
+		except:
+			print "Cannot convert number of complete members from cluster id"
+		query = "SELECT real_name FROM organism WHERE org_id = '%s'" % orga
+		print query
 		try:
 			cursor.execute(query)
 			org = cursor.fetchall()[0][0]

@@ -13,7 +13,7 @@ threshold = as.numeric(description[4])*0.7
 tmp = read.csv(infile)
 data <- tmp[order(tmp$X),]
 
-pdf(paste0('/home/seth/Dropbox/seth-1/special_gc/gc_dist_',description[1],'.pdf'))
+pdf(paste0('/home/seth/Dropbox/seth-1/special_gc/testing/gc_dist_',description[1],'.pdf'))
 
 DF1 <- melt(data, id.var="X")
 
@@ -22,7 +22,7 @@ DF1$n <- ordered(data$X, levels = rev(levels(data$X)))
 
 seth_cols <- c("#08519C","#2171B5","#4292C6","#6BAED6","#9ECAE1", "#C6DBEF", "#DEEBF7", "#F7FBFF")
 seth_cols2 <- c("#08519C","#4292C6","#9ECAE1", "#F7FCFD", "#CCECE6", "#66C2A4")
-tcveCols <- c("#084081","#4eb3d3", "#2b8cbe", "#0868ac","#fc8d59", "#e34a33", "#b30000")
+tcveCols <- c("#084081","#4eb3d3", "#2b8cbe", "#0868ac","#fc8d59", "#e34a33", "#b30000", "#D95F02", "#7570B3", "#08519C","#2171B5","#4292C6","#6BAED6","#9ECAE1", "#C6DBEF", "#DEEBF7", "#F7FBFF")
 ggplot(DF1, aes(x = n, y = value, fill = variable))+
 geom_bar(stat = "identity")+
 coord_flip()+

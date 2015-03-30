@@ -1,16 +1,12 @@
-'''----------------------
-GENEVIEWER IMPLEMENTATION 
-----------------------'''
-
 from reportlab.lib.units import cm
-from Bio.Graphics import BasicChromosome
 from Bio import SeqIO
+from Bio.Graphics import BasicChromosome
 
 entries = [("Chr I", "NC_003070.gbk"),
-           ("Chr II", "NC_003071.gbk")]#,
-          # ("Chr III", "CHR_III/NC_003074.gbk"),
-          # ("Chr IV", "CHR_IV/NC_003075.gbk"),
-           #("Chr V", "CHR_V/NC_003076.gbk")]
+           ("Chr II", "NC_003071.gbk"),
+           ("Chr III", "NC_003074.gbk"),
+           ("Chr IV", "NC_003075.gbk"),
+           ("Chr V", "NC_003076.gbk")]
 
 max_len = 30432563 #Could compute this
 telomere_length = 1000000 #For illustration
@@ -24,9 +20,7 @@ for index, (name, filename) in enumerate(entries):
     features = [f for f in record.features if f.type=="tRNA"]
     #Record an Artemis style integer color in the feature's qualifiers,
     #1 = Black, 2 = Red, 3 = Green, 4 = blue, 5 =cyan, 6 = purple
-    for f in features:
-        f.qualifiers["color"] = [index+2]
-        print f
+    for f in features: f.qualifiers["color"] = [index+2]
 
     cur_chromosome = BasicChromosome.Chromosome(name)
     #Set the scale to the MAXIMUM length plus the two telomeres in bp,
@@ -39,8 +33,8 @@ for index, (name, filename) in enumerate(entries):
     start.scale = telomere_length
     cur_chromosome.add(start)
 
-    #Add a body - using bp as the scale length here.
-    body = BasicChromosome.ChromosomeSegment()
+    #Add a body - again using bp as the scale length here.
+    body = BasicChromosome.AnnotatedChromosomeSegment(length, features)
     body.scale = length
     cur_chromosome.add(body)
 
@@ -52,4 +46,4 @@ for index, (name, filename) in enumerate(entries):
     #This chromosome is done
     chr_diagram.add(cur_chromosome)
 
-chr_diagram.draw("simple_chrom.pdf", "Arabidopsis thaliana, should change to Asp though...")
+chr_diagram.draw("tRNA_chrom.pdf", "Arabidopsis thaliana")
