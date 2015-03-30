@@ -537,7 +537,7 @@ def kegg (org_name,filepath, action, dbname):
 	connect_values 	= ["org_id", "protein_id", "ecNum", "pathway","ecNum", "pathway"]
 
 
-	main_insertQuery = "REPLACE INTO kegg (kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
+	main_insertQuery = "INSERT IGNORE INTO kegg (kegg_ecNum, kegg_definition, kegg_catalyticActivity, kegg_cofactors, kegg_associatedDiseases, kegg_pathway, kegg_pathway_class, kegg_pathway_type) VALUES(%s);" % ("%s," * len(main_values)).rstrip(",")
 	connect_insertQuery = "REPLACE INTO protein_has_kegg (org_id, protein_id, kegg_ecNum, kegg_pathway, kegg_id ) values(%s,%s,%s,%s, (SELECT kegg_id from kegg where kegg_ecNum=%s and kegg_pathway=%s));"
 
 	org_id = load_tab_files(name, nrtab, main_values, connect_values, line_values, main_insertQuery, connect_insertQuery, org_name,filepath, action, dbname)
