@@ -25,7 +25,7 @@ executeQuery
 startTime = datetime.now() # record runtime
 parser = CustomArgumentParser(formatter_class=SmartFormatter, usage='%(prog)s -dbname [database name]')
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
-parser.add_argument("-Rscript", "-R", required=False, default = "/home/tcve/github/tcve/clusterPresenceAbsence.R", help="Rscript name/path")
+parser.add_argument("-Rscript", "-R", required=False, default = "/home/tcve/github/tcve/blast_antismash_subset.R", help="Rscript name/path")
 parser.add_argument("-specificOrgs", "-sp", nargs = '*',  required=False, default=[None], action='store', help="Lis of specificOrgs for plots")
 
 """ TABLES """
@@ -277,12 +277,12 @@ if anaLoop:
 
 	#print specificOrgs, len(specificOrgs)
 	if len(specificOrgs) <= 1:
-		print "# INFO: running Rscript, clusterPresenceAbsence.R"
-		os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' clusterPresenceAbsence.R test.out ")
+		print "# INFO: running Rscript, blast_antismash_subset.R"
+		os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
 
 	if len(specificOrgs) > 1:
-		print "# INFO: running Rscript, clusterPresenceAbsence_specificOrgs.R"
-		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' clusterPresenceAbsence_specificOrgs.R test.out ")
+		print "# INFO: running Rscript, blast_antismash_subset_specificOrgs.R"
+		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' blast_antismash_subset_specificOrgs.R test.out ")
 		count = 0
 		orgString = ''
 		for org in specificOrgs:
@@ -290,8 +290,8 @@ if anaLoop:
 			count += 1
 			if not count == len(specificOrgs):
 				orgString = orgString + " | "
-		#print "sed \"s/orgString/" + orgString + "/g\" clusterPresenceAbsence_specificOrgs.R"		
-		os.system("sed \"s/orgString/" + orgString + "/g\" clusterPresenceAbsence_specificOrgs.R > tmp.R")
+		#print "sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R"		
+		os.system("sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R > tmp.R")
 		os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' tmp.R test.out ")
 		
 
@@ -319,7 +319,7 @@ if ana1:
 
 	# ADD
 	#print "# INFO: running Rscript"
-	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' clusterPresenceAbsence.R test.out ")
+	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
 
 
 
@@ -349,7 +349,7 @@ if ana2:
 
 	# ADD
 	#print "# INFO: running Rscript"
-	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' clusterPresenceAbsence.R test.out ")
+	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
 
 
 
