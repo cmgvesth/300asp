@@ -38,25 +38,25 @@ ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 
 b <- c(0,0.2,0.4,0.6,0.8,1)
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-cutoff-clustered-bestcand-tree.pdf')
+pdf('afolder/orgs2cluster-all-cutoff-clustered-bestcand-tree.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE ,col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 #pheatmap(mat, main="All nigri clusters, mostly white, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=100,color=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-cutoff-clustered-bestcand-notree.pdf')
+pdf('afolder/orgs2cluster-all-cutoff-clustered-bestcand-notree.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE ,col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 #pheatmap(mat, main="All nigri clusters, mostly white, no tree, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=0,color=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-color-clustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-all-color-clustered-bestcand.pdf')
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 #pheatmap(mat, main="All nigri clusters, more color, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=100,color=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-cutoff-unclustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-all-cutoff-unclustered-bestcand.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 #pheatmap(mat, main="All nigri clusters, mostly white, unclustered", show_colnames=FALSE, cluster_cols=FALSE,cluster_rows=FALSE, color=colfunc, breaks=b, margins =c(4,10))
@@ -90,7 +90,7 @@ cvs <- unique(dat$q_orgid)
 cvs_color <- rep(c("white", "grey50", "black"),length(cvs)/3)
 ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-cutoff-orgclustered-bestcand-blackwhite.pdf', width=12, height=8)
+pdf('afolder/orgs2cluster-all-cutoff-orgclustered-bestcand-blackwhite.pdf', width=12, height=8)
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, organism clustered", dendrogram="row", trace = "none", 
 	sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),ColSideColor=ccol_stages,
@@ -100,7 +100,7 @@ heatmap.2(mat, main="All nigri clusters, organism clustered", dendrogram="row", 
 	hclustfun = function(x) hclust(x,method = 'complete'))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-all-cutoff-bothclustered-bestcand-blackwhite.pdf', width=12, height=8)
+pdf('afolder/orgs2cluster-all-cutoff-bothclustered-bestcand-blackwhite.pdf', width=12, height=8)
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All nigri clusters, organism clustered", dendrogram="both", trace = "none", 
 	sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),ColSideColor=ccol_stages,
@@ -123,23 +123,23 @@ cvs_color <- rainbow(length(cvs))
 ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 b <- c(0,0.2,0.4,0.6,0.8,1)
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-clustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-10-cutoff-clustered-bestcand.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10 nigri clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE ,col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 #pheatmap(mat, main="Size >10 nigri clusters, mostly white, clustered", annotation_colors=ccol_stages, show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_row=100,color=colfunc, breaks=b, margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-range-clustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-10-range-clustered-bestcand.pdf')
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10 nigri clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-unclustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-10-cutoff-unclustered-bestcand.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10 nigri clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
 
-pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-orgclustered-bestcand.pdf')
+pdf('afolder/orgs2cluster-10-cutoff-orgclustered-bestcand.pdf')
 colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10 nigri clusters, organism clustered", dendrogram="row", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 dev.off()
@@ -148,7 +148,7 @@ dev.off()
 orgdat <- subset(tmpdat, tmpdat$q_sec=="Nigri" & tmpdat$h_sec=="Nigri" & tmpdat$q_orgname!="Aspac1" & tmpdat$h_orgname!="Aspac1") # q_orgid, q_clustid, h_realname, clustCov
 
 for (s in unique(orgdat$q_orgname)) {
-	filename = paste("/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-clustered-bestcand_", s, ".pdf", sep="")
+	filename = paste("afolder/orgs2cluster-clustered-bestcand_", s, ".pdf", sep="")
 	title = paste("Sec. met. clusters, mostly white, clustered, clusters from ", s,  sep="")
 
 	subdat <- subset(orgdat, orgdat$q_orgname==s, select=c(12,3,6,8)) # q_orgid, q_clustid, h_realname, clustCov
@@ -170,17 +170,17 @@ for (s in unique(orgdat$q_orgname)) {
 	dev.off()
 }
 
-	# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-range-clustered-bestcand.pdf')
+	# pdf('afolder/orgs2cluster-10-range-clustered-bestcand.pdf')
 	# colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 	# heatmap.2(mat, main="Size >10 nigri clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 	# dev.off()
 
-	# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-unclustered-bestcand.pdf')
+	# pdf('afolder/orgs2cluster-10-cutoff-unclustered-bestcand.pdf')
 	# colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 	# heatmap.2(mat, main="Size >10 nigri clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 	# dev.off()
 
-	# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-orgclustered-bestcand.pdf')
+	# pdf('afolder/orgs2cluster-10-cutoff-orgclustered-bestcand.pdf')
 	# colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 	# heatmap.2(mat, main="Size >10 nigri clusters, organism clustered", dendrogram="row", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 	# dev.off()
@@ -253,22 +253,22 @@ for (s in unique(orgdat$q_orgname)) {
 
 # b <- c(0,0.2,0.4,0.6,0.8,1)
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-Aspni7-cutoff-clustered.pdf')
+# pdf('afolder/orgs2cluster-Aspni7-cutoff-clustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Aspni7 nigri clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE ,col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-Aspni7-range-clustered.pdf')
+# pdf('afolder/orgs2cluster-Aspni7-range-clustered.pdf')
 # colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Aspni7 nigri clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-Aspni7-cutoff-unclustered.pdf')
+# pdf('afolder/orgs2cluster-Aspni7-cutoff-unclustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Aspni7 nigri clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-Aspni7-cutoff-orgclustered.pdf')
+# pdf('afolder/orgs2cluster-Aspni7-cutoff-orgclustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Aspni7 nigri clusters, organism clustered", dendrogram="row", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
@@ -297,27 +297,27 @@ for (s in unique(orgdat$q_orgname)) {
 
 # b <- c(0,0.2,0.4,0.6,0.8,1)
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-clustered.pdf')
+# pdf('afolder/orgs2cluster-10-cutoff-clustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Size >10 nigri clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE ,col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-range-clustered.pdf')
+# pdf('afolder/orgs2cluster-10-range-clustered.pdf')
 # colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Size >10 nigri clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-unclustered.pdf')
+# pdf('afolder/orgs2cluster-10-cutoff-unclustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Size >10 nigri clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-10-cutoff-orgclustered.pdf')
+# pdf('afolder/orgs2cluster-10-cutoff-orgclustered.pdf')
 # colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 # heatmap.2(mat, main="Size >10 nigri clusters, organism clustered", dendrogram="row", trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=FALSE , col=colfunc, breaks=b, labCol=FALSE, density.info="none", margins =c(4,10))
 # dev.off()
 
-# pdf('/home/tcve/github/SMClusterAnalysis/SMClusterAccurance/afolder_clusterPresenceAbsence/orgs2cluster-color-pie.pdf')
+# pdf('afolder/orgs2cluster-color-pie.pdf')
 # pie(rep(1,length(cvs_color)), col=cvs_color)
 # dev.off()
 

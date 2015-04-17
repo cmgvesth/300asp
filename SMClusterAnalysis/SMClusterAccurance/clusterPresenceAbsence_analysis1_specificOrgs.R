@@ -49,7 +49,7 @@ ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 b <- c(0,0.2,0.4,0.6,0.8,1)
 
 
-pdf('orgs2cluster-all-cutoff-clustered-bestcand-tree.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-cutoff-clustered-bestcand-tree.pdf', width=plotwidth, height=plotheight)
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, 
@@ -58,7 +58,7 @@ legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stag
 #pheatmap(mat, main="All  clusters, mostly white, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=100,color=colfunc, breaks=b, density.info="none", margins =c(plotwidth,plotheight))
 dev.off()
 
-pdf('orgs2cluster-all-cutoff-clustered-bestcand-notree.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-cutoff-clustered-bestcand-notree.pdf', width=plotwidth, height=plotheight)
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, mostly white, clustered", dendrogram="both", trace = "none", ColSideColor=ccol_stages, 
@@ -67,7 +67,7 @@ legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stag
 #pheatmap(mat, main="All  clusters, mostly white, no tree, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=0,color=colfunc, breaks=b, density.info="none", margins =c(plotwidth,plotheight))
 dev.off()
 
-pdf('orgs2cluster-all-color-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-color-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, clustered",dendrogram="both", trace = "none", ColSideColor=ccol_stages, 
 	Rowv=TRUE, Colv=TRUE , col=colfunc, breaks=b, density.info="none", margins =c(plotwidth,plotheight))
@@ -75,7 +75,7 @@ legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stag
 #pheatmap(mat, main="All  clusters, more color, clustered", show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_col=100,color=colfunc, breaks=b, density.info="none", margins =c(plotwidth,plotheight))
 dev.off()
 
-pdf('orgs2cluster-all-color-clusteredrow-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-color-clusteredrow-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, clustered",dendrogram="row", trace = "none", ColSideColor=ccol_stages, 
 	Rowv=TRUE, Colv=FALSE , col=colfunc, breaks=b, density.info="none", margins =c(plotwidth,plotheight))
@@ -84,7 +84,7 @@ legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stag
 dev.off()
 
 
-pdf('orgs2cluster-all-cutoff-unclustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-cutoff-unclustered-bestcand.pdf', width=plotwidth, height=plotheight)
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, unclustered", dendrogram="none", trace = "none", ColSideColor=ccol_stages, 
@@ -121,7 +121,7 @@ cvs <- unique(dat$q_orgid)
 cvs_color <- rep(c("white", "grey50", "black"),length(cvs)/3)
 ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 
-pdf('orgs2cluster-all-cutoff-orgclustered-bestcand-blackwhite.pdf', width=plotwidth, height=plotheight )
+pdf('afolder/orgs2cluster-all-cutoff-orgclustered-bestcand-blackwhite.pdf', width=plotwidth, height=plotheight )
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, organism clustered", dendrogram="row", trace = "none", 
@@ -133,7 +133,7 @@ heatmap.2(mat, main="All clusters, organism clustered", dendrogram="row", trace 
 	legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stages)), cex=0.8)
 dev.off()
 
-pdf('orgs2cluster-all-cutoff-bothclustered-bestcand-blackwhite.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-all-cutoff-bothclustered-bestcand-blackwhite.pdf', width=plotwidth, height=plotheight)
 #colfunc <- c("white"  ,"white", "white" ,"#2B8CBE","#084081")
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="All clusters, organism clustered", dendrogram="both", trace = "none", 
@@ -158,7 +158,7 @@ cvs_color <- rainbow(length(cvs))
 ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
 b <- c(0,0.2,0.4,0.6,0.8,1)
 
-pdf('orgs2cluster-10-cutoff-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-10-cutoff-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10  clusters, mostly white, clustered", dendrogram="both", 
 sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),
@@ -167,7 +167,7 @@ legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stag
 #pheatmap(mat, main="Size >10  clusters, mostly white, clustered", annotation_colors=ccol_stages, show_colnames=FALSE, cluster_cols=TRUE,cluster_rows=TRUE, treeheight_row=100,color=colfunc, breaks=b, margins =c(plotwidth,plotheight))
 dev.off()
 
-pdf('orgs2cluster-10-range-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-10-range-clustered-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10  clusters, clustered",dendrogram="both", 
 sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),
@@ -175,7 +175,7 @@ trace = "none", ColSideColor=ccol_stages, Rowv=TRUE, Colv=TRUE , col=colfunc, br
 legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stages)), cex=0.8)
 dev.off()
 
-pdf('orgs2cluster-10-cutoff-unclustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-10-cutoff-unclustered-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10  clusters, unclustered", dendrogram="none", 
 sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),
@@ -183,7 +183,7 @@ trace = "none", ColSideColor=ccol_stages, Rowv=FALSE, Colv=FALSE , col=colfunc, 
 legend('bottomleft', legend=c(unique(dat$q_orgid)),lty=1, col=c(unique(ccol_stages)), cex=0.8)
 dev.off()
 
-pdf('orgs2cluster-10-cutoff-orgclustered-bestcand.pdf', width=plotwidth, height=plotheight)
+pdf('afolder/orgs2cluster-10-cutoff-orgclustered-bestcand.pdf', width=plotwidth, height=plotheight)
 colfunc <- c("white"  ,"#CCEBC5", "#7BCCC4" ,"#2B8CBE","#084081")
 heatmap.2(mat, main="Size >10  clusters, organism clustered", dendrogram="row", 
 sepcolor="grey50",  sepwidth=c(0.001, 0.001), rowsep=c(0:length(rownames(mat))),
@@ -196,7 +196,7 @@ dev.off()
 orgdat <- subset(tmpdat, (orgString) & tmpdat$q_orgname!="Aspac1" & tmpdat$h_orgname!="Aspac1") 
 
 for (s in unique(orgdat$q_orgname)) {
-	filename = paste("orgs2cluster-clustered-bestcand_", s, ".pdf", sep="")
+	filename = paste("afolder/orgs2cluster-clustered-bestcand_", s, ".pdf", sep="")
 	title = paste("Sec. met. clusters, mostly white, clustered, clusters from ", s,  sep="")
 
 	subdat <- subset(orgdat, orgdat$q_orgname==s, select=c(12,3,6,8)) # q_orgid, q_clustid, h_realname, clustCov

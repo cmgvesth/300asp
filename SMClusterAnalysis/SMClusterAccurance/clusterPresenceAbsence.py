@@ -26,7 +26,9 @@ startTime = datetime.now() # record runtime
 parser = CustomArgumentParser(formatter_class=SmartFormatter, usage='%(prog)s -dbname [database name]')
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-Rscript", "-R", required=False, default = "/home/tcve/github/tcve/blast_antismash_subset.R", help="Rscript name/path")
-parser.add_argument("-specificOrgs", "-sp", nargs = '*',  required=False, default=[None], action='store', help="Lis of specificOrgs for plots")
+parser.add_argument("-specificOrgs", "-sp", nargs = '*',  required=False, default=[None], action='store', help="List of specificOrgs for plots")
+parser.add_argument("-section", "-sec", required=False, default = "Nigri", help="Aspergillus section")
+parser.add_argument("-afolder", "-af",  required=False, default="afolder_clusterPresenceAbsence", help="Name of folder for analysis results")
 
 """ TABLES """
 parser.add_argument("-clean1", "-c1", required=False, action='store_true', help="Compile new t_antismash2organism")
@@ -35,9 +37,9 @@ parser.add_argument("-clean3", "-c3", required=False, action='store_true', help=
 parser.add_argument("-loop", required=False, action='store_true', help="Compile t_antismashLoopAntismash")
 
 """ ANALYSIS """
-parser.add_argument("-ana1", "-a1", required=False, action='store_true', help="Cluster VS organism - not best candidate, looping")
-parser.add_argument("-ana2", "-a2", required=False, action='store_true', help="Cluster VS Cluster - not best candidate, looping")
-parser.add_argument("-anaLoop", "-aloop", required=False, action='store_true', help="Cluster VS organism - with best candidate, looping")
+parser.add_argument("-a1", required=False, action='store_true', help="Cluster VS organism - not best candidate, looping")
+parser.add_argument("-a2", required=False, action='store_true', help="Cluster VS Cluster - not best candidate, looping")
+parser.add_argument("-a3", required=False, action='store_true', help="Cluster VS organism - with best candidate, looping")
 
 parser.add_argument("-csize", "-cs", required=False, default = "5", help="Cluster size cutoff - default 5")
 
@@ -48,11 +50,18 @@ clean1 = args.clean1
 clean2 = args.clean2
 clean3 = args.clean3
 csize = args.csize
-ana1 = args.ana1
-ana2 = args.ana2
-anaLoop = args.anaLoop
+a1 = args.a1
+a2 = args.a2
+a3 = args.a3
 loop = args.loop
 specificOrgs = args.specificOrgs 
+section = args.sec
+root = os.path.abspath(__file__).split("/")[1:-1]
+Rpath = "/" + "/".join(root) + "/"
+afolder = Rpath + args.afolder
+
+#sys.exit(afolder)
+
 startTime = datetime.now() # record runtime
 
 if clean1:
@@ -77,13 +86,16 @@ print "#--------------------------------------------------------------\n\
 # Analysis, cluster VS organism - not best candidate, looping\t\t: %s\n\
 # Analysis, cluster VS cluster - not best candidate, looping\t\t: %s\n\
 # Analysis, cluster VS organism - with best candidate, looping\t\t: %s\n\
-#--------------------------------------------------------------" % (args.dbname, Rscript, specificOrgs, clean1, clean2, clean3, csize, ana1, ana2, anaLoop)
+#--------------------------------------------------------------" % (args.dbname, Rscript, specificOrgs, clean1, clean2, clean3, csize, a1, a2, a3)
+
+if specificOrgs and (not a3 or not a1):
+	print "# WARNING: specificOrgs is only applicable to analysis 3 and 1, -a3/-a1"
+
 
 '''------------------------------------------------------------------
 # Connection to database
 ------------------------------------------------------------------'''
 cursor = DBconnect("localhost", "asp", "1234", args.dbname) # costum function
-
 
 """----------------------------------------------------------------------------
 	TABLES
@@ -256,12 +268,17 @@ if loop:
 	ANALYSIS
 ----------------------------------------------------------------------------"""
 
+print "# INFO: creating analysis folder:" + afolder
+os.system("mkdir -p " + afolder + "" )
+afolder_string = afolder.replace("/", "\\/")
+
 """--------------------------------------
 t_antismashLoopAntismash - best candicate cluster analysis
 --------------------------------------"""
-if anaLoop:
+if a3:
 
-	startTimeanaLoop = datetime.now()
+	file_string = afolder + "/t_clusterPresenceAbsence_analysis3.csv"
+	startTime = datetime.now()
 
 	if not cursor.execute("Show tables LIKE 't_antismashLoopAntismash'"):
 		sys.exit("# ERROR: table does not exist, re-run with -loop option")
@@ -270,18 +287,19 @@ if anaLoop:
 	query = "SELECT * from t_antismashLoopAntismashCandidates"
 
 	(columns, result) = executeQuery(cursor, query)
-	cursor2csv(columns, result, "t_antismashLoopAntismash.csv")
+	cursor2csv(columns, result, afolder + "/t_clusterPresenceAbsence_analysis3.csv")
 
-	print "# INFO: wrote results to t_antismashLoopAntismash.csv"
-	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTimeanaLoop)
+	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis3.csv"
+	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTime)
 
-	#print specificOrgs, len(specificOrgs)
-	if len(specificOrgs) <= 1:
-		print "# INFO: running Rscript, blast_antismash_subset.R"
-		os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+	#print specificOrgs, len(specificOrgs),specificOrgs is None
+	if specificOrgs == [None]:
+		print "# INFO: running Rscript, clusterPresenceAbsence_analysis3.R"
+		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis3.R > tmp.R")
+		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 
-	if len(specificOrgs) > 1:
-		print "# INFO: running Rscript, blast_antismash_subset_specificOrgs.R"
+	if specificOrgs != [None]:
+		print "# INFO: running Rscript, clusterPresenceAbsence_analysis3_specificOrgs.R"
 		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' blast_antismash_subset_specificOrgs.R test.out ")
 		count = 0
 		orgString = ''
@@ -291,15 +309,23 @@ if anaLoop:
 			if not count == len(specificOrgs):
 				orgString = orgString + " | "
 		#print "sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R"		
-		os.system("sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R > tmp.R")
-		os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' tmp.R test.out ")
+		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis3_specificOrgs.R > tmp.R")
+		os.system("sed -i \"s/orgString/" + orgString + "/g\" tmp.R")
+		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 		
 
 
 """--------------------------------------
 ORGANISM VS CLUSTER
 --------------------------------------"""
-if ana1:
+if a1:
+	file_string = afolder + "/t_clusterPresenceAbsence_analysis1.csv"
+	startTime = datetime.now()
+
+	print ("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "clusterPresenceAbsence_analysis1.R > tmp.R")
+	print ("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
+
+	sys.exit()
 	# If not specified to create table test if the table actually does exist
 	if not cursor.execute("Show tables LIKE 't_antismash2blast'") or not cursor.execute("Show tables LIKE 't_antismash2blast_reduced'"):
 		sys.exit("# ERROR: table does not exist, re-run with -clean2 option")
@@ -313,23 +339,43 @@ if ana1:
 			join organism O2 on (O2.name=h_org)\
 			where clust_size >= " + str(csize)+";"
 	(columns, result) = executeQuery(cursor, query)
-	cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
+	cursor2csv(columns, result, afolder + "/t_clusterPresenceAbsence_analysis1.csv")
 
-	print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
+	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTime)
 
-	# ADD
-	#print "# INFO: running Rscript"
-	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis1.csv"
 
+	if specificOrgs == [None]:
+		print "# INFO: running Rscript, clusterPresenceAbsence_analysis1.R"
+		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis1.R > tmp.R")
+		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 
+	if specificOrgs != [None]:
+		print "# INFO: running Rscript, clusterPresenceAbsence_analysis1_specificOrgs.R"
+		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' blast_antismash_subset_specificOrgs.R test.out ")
+		count = 0
+		orgString = ''
+		for org in specificOrgs:
+			orgString = orgString + " tmpdat\$q_orgname==\'" + str(org) + "\' "
+			count += 1
+			if not count == len(specificOrgs):
+				orgString = orgString + " | "
+		#print "sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R"		
+		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis1_specificOrgs.R > tmp.R")
+		os.system("sed -i \"s/orgString/" + orgString + "/g\" tmp.R")
+		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 
 """--------------------------------------
 CLUSTER VS CLUSTER
 --------------------------------------"""
 
-if ana2:
+if a2:
+	file_string = afolder + "/t_clusterVScluster.csv"
+	startTime = datetime.now()
+
 	print "# INFO: Dropping and re-creating t_clusterVScluster"
 	cursor.execute("DROP TABLE IF EXISTS t_clusterVScluster")
+
 	print "# INFO: selecting from t_clusterVScluster"
 
 	query="CREATE TABLE t_clusterVScluster as\
@@ -340,18 +386,24 @@ if ana2:
 	from t_antismash2blast as ta \
 	LEFT join t_antismash2blast as tb \
 	on ta.q_seqid=tb.h_seqid and ta.h_seqid=tb.q_seqid;"
+	(columns, result) = executeQuery(cursor, query)
 
 	query="SELECT *, ROUND(over/ta_clust_size, 2) as ta_clustCov, ROUND(over/tb_clust_size, 2) as tb_clustCov \
 	from ( SELECT *, count(*) as over from t_clusterVScluster group by ta_clust_id, tb_clust_id) as ta;"
 
 	(columns, result) = executeQuery(cursor, query)
-	cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
+	cursor2csv(columns, result, afolder + "/t_clusterPresenceAbsence_analysis2.csv")
+
+	print "# INFO: Runtime analysis of t_clusterVScluster: ", (datetime.now()-startTime)
+	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis2.csv"
 
 	# ADD
 	#print "# INFO: running Rscript"
 	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
 
 
+	os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis2.R > tmp.R")
+	os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 
 
 
