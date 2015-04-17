@@ -10,12 +10,14 @@ parser.add_argument("--met_compounds", "-ms", required=False, action='store_true
 parser.add_argument("--get_list", "-gl", required=False, action='store_true', help="Print a list of class/uniques")
 
 parser.add_argument("--orgs", "-og", required=False, action='store_true', help="Screen for compounds in Organisms")
+parser.add_argument("--seq", "-s", required=False, action='store_true', help="Create genebank files from our data")
 
 args = parser.parse_args()
 met_classes = args.met_classes
 met_compounds = args.met_compounds
 get_list = args.get_list
 orgs = args.orgs
+seq = args.seq
 cursor = asp_con('192.38.13.9', 'setd', '1234')
 
 
@@ -70,10 +72,18 @@ if orgs:
 	sub_query = "('"+"','".join(metabolite_org[org_index])+"','.*')" # TODO implement option to choose from metabolite
 	minimum_orgs = len(metabolite_org[org_index])
 	size = '2'
-	query = "SELECT q_clustid, q_clust_size, candidateMembers ,orgs_repr from (SELECT *, count(*) as orgs_repr from t_antismashLoopAntismashCandidates where h_realname IN %s and clustCov >= 0.5 group by q_clustid) ta where orgs_repr >= %s and q_clust_size > %s;" % (sub_query, minimum_orgs, size)
+	query = "SELECT q_clustid, q_clust_size, candidateMembers ,orgs_repr from (\
+		SELECT *, count(*) as orgs_repr from t_antismashLoopAntismashCandidates\
+		where h_realname IN %s and clustCov >= 0.5 group by q_clustid) ta\
+		where orgs_repr >= %s and q_clust_size > %s;" % (sub_query, minimum_orgs, size)
 	cursor.execute(query)
 	testing = cursor.fetchall()
 	print testing
+
+
+if seq:
+	pass
+
 
 
 
