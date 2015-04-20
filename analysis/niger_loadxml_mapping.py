@@ -35,7 +35,8 @@ tcve@klara:~/ExtraStorage/SmallProjects/jubra/Proteins$ for x in *txt
 # Imports
 ##################################################################'''
 import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__), "../utils/"))
+root = os.path.abspath(__file__).split("github")[0]
+sys.path.append(root+"github/utils/")
 from aspmine_imports import *
 
 '''##################################################################

@@ -23,6 +23,7 @@ executeQuery
 startTime = datetime.now() # record runtime
 parser = CustomArgumentParser(formatter_class=SmartFormatter, usage='%(prog)s -dbname [database name]')
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
+parser.add_argument("-Rscript", "-R", required=False, default = "/home/tcve/github/tcve/blast_antismash_subset.R", help="Rscript name/path")
 
 """ TABLES """
 parser.add_argument("-clean1", "-c1", required=False, action='store_true', help="Compile new t_antismash2organism")
@@ -39,6 +40,7 @@ parser.add_argument("-csize", "-cs", required=False, default = "5", help="Cluste
 
 """ PARSE ARGUMENTS """
 args 	= parser.parse_args()
+Rscript = args.Rscript
 clean1 = args.clean1
 clean2 = args.clean2
 clean3 = args.clean3
@@ -62,6 +64,7 @@ if clean3:
 print "#--------------------------------------------------------------\n\
 # ARGUMENTS\n\
 # Database\t: %s\n\
+# Name of Rscript -Rscript\t: %s\n\
 # Compile new t_antismash2organism -clean1\t: %s\n\
 # Compile new t_antismash2blast -clean2\t\t: %s\n\
 # Compile new t_antismash2blast_reduced -clean3\t: %s\n\
@@ -69,7 +72,7 @@ print "#--------------------------------------------------------------\n\
 # Analysis, cluster VS organism - not best candidate, looping\t\t: %s\n\
 # Analysis, cluster VS cluster - not best candidate, looping\t\t: %s\n\
 # Analysis, cluster VS organism - with best candidate, looping\t\t: %s\n\
-#--------------------------------------------------------------" % (args.dbname, clean1, clean2, clean3, csize, ana1, ana2, anaLoop)
+#--------------------------------------------------------------" % (args.dbname, Rscript, clean1, clean2, clean3, csize, ana1, ana2, anaLoop)
 
 '''------------------------------------------------------------------
 # Connection to database
@@ -268,7 +271,7 @@ if anaLoop:
 	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTimeanaLoop)
 
 	print "# INFO: running Rscript"
-	os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+	os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' " + Rscript + " test.out ")
 
 
 """--------------------------------------
@@ -291,6 +294,11 @@ if ana1:
 	cursor2csv(columns, result, "hitsPerOrgPerClusterGene.csv")
 
 	print "# INFO: wrote results to hitsPerOrgPerClusterGene.csv"
+
+	# ADD
+	#print "# INFO: running Rscript"
+	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+
 
 
 """--------------------------------------
@@ -316,6 +324,11 @@ if ana2:
 
 	(columns, result) = executeQuery(cursor, query)
 	cursor2csv(columns, result, "hitsPerClusterPerClusterGene.csv")
+
+	# ADD
+	#print "# INFO: running Rscript"
+	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+
 
 
 

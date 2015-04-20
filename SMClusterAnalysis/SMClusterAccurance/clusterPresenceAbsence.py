@@ -55,10 +55,7 @@ a2 = args.a2
 a3 = args.a3
 loop = args.loop
 specificOrgs = args.specificOrgs 
-section = args.sec
-root = os.path.abspath(__file__).split("/")[1:-1]
-Rpath = "/" + "/".join(root) + "/"
-afolder = Rpath + args.afolder
+section = args.section
 
 #sys.exit(afolder)
 
@@ -267,18 +264,41 @@ if loop:
 """----------------------------------------------------------------------------
 	ANALYSIS
 ----------------------------------------------------------------------------"""
+def main():
 
-print "# INFO: creating analysis folder:" + afolder
-os.system("mkdir -p " + afolder + "" )
-afolder_string = afolder.replace("/", "\\/")
+	root = os.path.abspath(__file__).split("/")[1:-1]
+	Rpath = "/" + "/".join(root) + "/"
+	afolder = os.getcwd() + "/" + args.afolder
+	os.system("mkdir -p " + afolder + "" )
+	afolderString = afolder.replace("/", "\\/")
+	
+	print "# INFO: creating analysis folder:" + afolder
+
+	os.system("sed \"s/replace_folderpath/\'" + afolderString + "\'/g\" " + Rpath + "/clusterPresenceAbsence_generic.R > " + afolder + "/tmp.R")
+
+	if a1:
+		( data1, data2, data3, file_string  ) = analysis1( afolder, afolderString )
+		os.system("sed -i \"s/replace_analysisNumber/\'a1\'/g\" " + afolder + "/tmp.R")
+	if a2:
+		( data1, data2, data3, file_string  ) = analysis2( afolder, afolderString )
+		os.system("sed -i \"s/replace_analysisNumber/\'a2\'/g\" " + afolder + "/tmp.R")
+	if a3:
+		( data1, data2, data3, file_string  ) = analysis3( afolder, afolderString )
+		os.system("sed -i \"s/replace_analysisNumber/\'a3\'/g\" " + afolder + "/tmp.R")
+
+	os.system("sed -i \"s/replace_data1/" + data1 + "/g\" " + afolder + "/tmp.R")
+	os.system("sed -i \"s/replace_data2/" + data2 + "/g\" " + afolder + "/tmp.R")
+	os.system("sed -i \"s/replace_data3/" + data3 + "/g\" " + afolder + "/tmp.R")
+	os.system("sed -i \"s/replace_infile/\'" + file_string + "\'/g\" " + afolder + "/tmp.R")
+	os.system("R CMD BATCH " + afolder + "/tmp.R " + afolder + "/test.out ")
 
 """--------------------------------------
 t_antismashLoopAntismash - best candicate cluster analysis
 --------------------------------------"""
-if a3:
+def analysis3( afolder, afolderString ):
 
-	file_string = afolder + "/t_clusterPresenceAbsence_analysis3.csv"
 	startTime = datetime.now()
+	file_string = afolderString + "\\/t_clusterPresenceAbsence_analysis3.csv"
 
 	if not cursor.execute("Show tables LIKE 't_antismashLoopAntismash'"):
 		sys.exit("# ERROR: table does not exist, re-run with -loop option")
@@ -292,15 +312,15 @@ if a3:
 	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis3.csv"
 	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTime)
 
-	#print specificOrgs, len(specificOrgs),specificOrgs is None
 	if specificOrgs == [None]:
-		print "# INFO: running Rscript, clusterPresenceAbsence_analysis3.R"
-		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis3.R > tmp.R")
-		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
+		print "# INFO: creating section argument"
+		secString = "tmpdat\$q_sec==\'" + section + "\' \& tmpdat\$h_sec==\'" + section + "\'"
+		data1 = "data1 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
+		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
+		data3 = "data3 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "
 
 	if specificOrgs != [None]:
-		print "# INFO: running Rscript, clusterPresenceAbsence_analysis3_specificOrgs.R"
-		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' blast_antismash_subset_specificOrgs.R test.out ")
+		print "# INFO: creating organism arguments"
 		count = 0
 		orgString = ''
 		for org in specificOrgs:
@@ -308,24 +328,21 @@ if a3:
 			count += 1
 			if not count == len(specificOrgs):
 				orgString = orgString + " | "
-		#print "sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R"		
-		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis3_specificOrgs.R > tmp.R")
-		os.system("sed -i \"s/orgString/" + orgString + "/g\" tmp.R")
-		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
-		
+		data1 = "data1 <- subset(tmpdat, (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
+		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
+		data3 = "data3 <- subset(tmpdat, (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "
 
+	return ( data1, data2, data3, file_string )			
 
 """--------------------------------------
 ORGANISM VS CLUSTER
 --------------------------------------"""
-if a1:
-	file_string = afolder + "/t_clusterPresenceAbsence_analysis1.csv"
+def analysis1( afolder, afolderString ):
 	startTime = datetime.now()
+	file_string = afolderString + "\\/t_clusterPresenceAbsence_analysis1.csv"
 
-	print ("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "clusterPresenceAbsence_analysis1.R > tmp.R")
-	print ("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
 
-	sys.exit()
+	#sys.exit()
 	# If not specified to create table test if the table actually does exist
 	if not cursor.execute("Show tables LIKE 't_antismash2blast'") or not cursor.execute("Show tables LIKE 't_antismash2blast_reduced'"):
 		sys.exit("# ERROR: table does not exist, re-run with -clean2 option")
@@ -338,21 +355,22 @@ if a1:
 			join organism O1 using (name)\
 			join organism O2 on (O2.name=h_org)\
 			where clust_size >= " + str(csize)+";"
+
 	(columns, result) = executeQuery(cursor, query)
 	cursor2csv(columns, result, afolder + "/t_clusterPresenceAbsence_analysis1.csv")
 
 	print "# INFO: Runtime analysis of t_antismashLoopAntismash: ", (datetime.now()-startTime)
-
 	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis1.csv"
 
 	if specificOrgs == [None]:
-		print "# INFO: running Rscript, clusterPresenceAbsence_analysis1.R"
-		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis1.R > tmp.R")
-		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
+		print "# INFO: creating section argument"
+		secString = "tmpdat\$q_sec==\'" + section + "\' \& tmpdat\$h_sec==\'" + section + "\'"
+		data1 = "data1 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
+		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
+		data3 = "data3 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "
 
 	if specificOrgs != [None]:
-		print "# INFO: running Rscript, clusterPresenceAbsence_analysis1_specificOrgs.R"
-		#print ("R CMD BATCH '--args t_antismashLoopAntismash.csv "+ ' '.join(specificOrgs) + "' blast_antismash_subset_specificOrgs.R test.out ")
+		print "# INFO: creating organism arguments"
 		count = 0
 		orgString = ''
 		for org in specificOrgs:
@@ -360,18 +378,19 @@ if a1:
 			count += 1
 			if not count == len(specificOrgs):
 				orgString = orgString + " | "
-		#print "sed \"s/orgString/" + orgString + "/g\" blast_antismash_subset_specificOrgs.R"		
-		os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis1_specificOrgs.R > tmp.R")
-		os.system("sed -i \"s/orgString/" + orgString + "/g\" tmp.R")
-		os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
+		data1 = "data1 <- subset(tmpdat, (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
+		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
+		data3 = "data3 <- subset(tmpdat, (" + orgString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "
+		
+	return ( data1, data2, data3, file_string)			
 
 """--------------------------------------
 CLUSTER VS CLUSTER
 --------------------------------------"""
 
-if a2:
-	file_string = afolder + "/t_clusterVScluster.csv"
+def analysis2( afolder, afolderString ):
 	startTime = datetime.now()
+	file_string = afolderString + "\\/t_clusterPresenceAbsence_analysis2.csv"
 
 	print "# INFO: Dropping and re-creating t_clusterVScluster"
 	cursor.execute("DROP TABLE IF EXISTS t_clusterVScluster")
@@ -379,9 +398,9 @@ if a2:
 	print "# INFO: selecting from t_clusterVScluster"
 
 	query="CREATE TABLE t_clusterVScluster as\
-	SELECT ta.clust_id ta_clust_id , ta.q_org ta_q_org , ta.q_seqid ta_q_seqid, ta.h_org ta_h_org, ta.h_seqid ta_h_seqid, \
+	SELECT ta.clust_id ta_clust_id, ta.q_org ta_q_org, ta.q_seqid ta_q_seqid, ta.h_org ta_h_org, ta.h_seqid ta_h_seqid, \
 	ta.pident ta_pident, ta.q_cov ta_q_cov, ta.h_cov ta_h_cov, SUBSTRING_INDEX(ta.clust_id, '_', -1) as ta_clust_size, \
-	tb.clust_id tb_clust_id , tb.q_org tb_q_org , tb.q_seqid tb_q_seqid, tb.h_org tb_h_org, tb.h_seqid tb_h_seqid, \
+	tb.clust_id tb_clust_id, tb.q_org tb_q_org, tb.q_seqid tb_q_seqid, tb.h_org tb_h_org, tb.h_seqid tb_h_seqid, \
 	tb.pident tb_pident, tb.q_cov tb_q_cov, tb.h_cov tb_h_cov, SUBSTRING_INDEX(tb.clust_id, '_', -1) as tb_clust_size \
 	from t_antismash2blast as ta \
 	LEFT join t_antismash2blast as tb \
@@ -397,14 +416,11 @@ if a2:
 	print "# INFO: Runtime analysis of t_clusterVScluster: ", (datetime.now()-startTime)
 	print "# INFO: wrote results to t_clusterPresenceAbsence_analysis2.csv"
 
-	# ADD
-	#print "# INFO: running Rscript"
-	#os.system("R CMD BATCH '--args t_antismashLoopAntismash.csv' blast_antismash_subset.R test.out ")
+	#os.system("sed -i \"s/analysisNr/a2/g\" " + afolder + "/tmp.R")
+	#os.system("sed \"s/afolder/" + afolderString + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis2.R > " + afolder + "/tmp.R")
+	#os.system("sed -i \"s/infile/" + file_string + "/g\" " + afolder + "/tmp.R")
+	#os.system("R CMD BATCH " + afolder + "/tmp.R " + afolder + "/test.out ")
 
 
-	os.system("sed \"s/afolder/" + afolder_string + "/g\" " + Rpath + "/clusterPresenceAbsence_analysis2.R > tmp.R")
-	os.system("R CMD BATCH '--args " + file_string + "' tmp.R test.out ")
-
-
-
-
+if __name__ == '__main__':
+    main()
