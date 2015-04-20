@@ -127,6 +127,11 @@ if unique:
 if normalize:
 	query = "SELECT t_gc_shared_count.q_realname, t_gc_shared_count.h_realname, (t_gc_shared_count.shared/t_testing_max.max_shared)*100 as norm_shared from t_gc_shared_count join t_testing_max ON t_gc_shared_count.q_realname = t_testing_max.q_realname ;"
 
+
+##################################
+# Analysis for each gene cluster #
+##################################
+
 if single:
 
 	with open('best.csv') as f:
