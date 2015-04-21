@@ -264,28 +264,40 @@ print "# INFO: Final error handling"
 print "#--------------------------------------------------------------"
 
 if org_id:
-	print "# INFO Organism id: ", org_id
+	print "# INFO Organism id: ", org_id[0]
 else:
 	sys.exit("# ERROR: something went wrong, organism ID was not returned, filetype = %s" % source)
 	
 #------------------------------------------------------------------
 # Print database content for organism
 #------------------------------------------------------------------
-db = mdb.connect("localhost","asp","1234",dbname)
-cursor = db.cursor()
-cursor.execute("SELECT organism.org_id, name, ( SELECT count(*) from proteins where org_id=%s), ( SELECT count(*) from transcripts where org_id=%s ), ( SELECT count(*) from assembly where org_id=%s ), ( SELECT count(*) from cds where org_id=%s ) from organism where org_id = %s" % (org_id,org_id,org_id,org_id,org_id))
-results = cursor.fetchall()
-print "# INFO database data: " , (results)
 
 if action == "load":
-	if results[0][2] == 0:
+
+	db = mdb.connect("localhost","asp","1234",dbname)
+	cursor = db.cursor()
+	(columns, result) = executeQuery(cursor,  "SELECT count(*) from proteins where org_id=\'" + str(org_id[0]) + "\';")
+	if result[0][0] == 0:
 		print "# WARNING: no protein data has been loaded for this project"
-	if results[0][3] == 0:
+	else:
+		print "# INFO: protein records for organism %s = %s" % (org_id[0], result[0][0])	
+	(columns, result) = executeQuery(cursor,  "SELECT count(*) from transcripts where org_id=\'" + str(org_id[0]) + "\';")
+	if result[0][0] == 0:
 		print "# WARNING: no transcript data has been loaded for this project"
-	if results[0][4] == 0:
+	else:
+		print "# INFO: transcript records for organism %s = %s" % (org_id[0], result[0][0])	
+
+	(columns, result) = executeQuery(cursor,  "SELECT count(*) from assembly where org_id=\'" + str(org_id[0]) + "\';")
+	if result[0][0] == 0:
 		print "# WARNING: no assembly data has been loaded for this project"
-	if results[0][5] == 0:
+	else:
+		print "# INFO: assembly records for organism %s = %s" % (org_id[0], result[0][0])	
+
+	(columns, result) = executeQuery(cursor,  "SELECT count(*) from cds where org_id=\'" + str(org_id[0]) + "\';")
+	if result[0][0] == 0:
 		print "# WARNING: no cds data has been loaded for this project"
+	else:
+		print "# INFO: cds records for organism %s = %s" % (org_id[0], result[0][0])	
 
 #------------------------------------------------------------------
 # Print program runtime
