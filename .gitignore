@@ -46,6 +46,7 @@ Thumbs.db
 *.svg
 *.gz
 *.tar
+*.eps
 *.pdf
 *.fasta
 *.gff
@@ -70,4 +71,9 @@ __pycache__/
 
 # Sequence files #
 ##################
+*.gb
 *.gbk
+
+# Misc #
+########
+*.out
