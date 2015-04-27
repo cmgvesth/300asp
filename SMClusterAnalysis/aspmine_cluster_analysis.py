@@ -3,7 +3,7 @@
 '''##################################################################
 # Imports
 ##################################################################'''
-import sys 
+import sys, os
 root = os.path.abspath(__file__).split("github")[0]
 sys.path.append(root+"github/utils/")
 from aspmine_imports import *
