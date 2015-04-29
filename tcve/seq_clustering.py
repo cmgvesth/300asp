@@ -24,7 +24,7 @@ parser.add_argument("-dist", "-d", required=False, help="File containing distanc
 
 args 		= parser.parse_args()
 fastafile 	= args.fasta
-distfile = args.dist
+distfile 	= args.dist
 
 if not distfile and not fastafile:
 	sys.exit("# ERROR: neither FASTA or distance specified, please choose only one")
@@ -48,7 +48,7 @@ print "#--------------------------------------------------------------\n\
 ------------------------------------------------------------------'''
 if fastafile and not distfile:
 	source_exists("file", fastafile)
-	os.system("clustalw -infile=%s" % fastafile)
+	#os.system("clustalw -infile=%s" % fastafile)
 	os.system("clustalw -infile=%s -tree -pim" % fastafile.replace("fsa", "aln"))
 	infile = open(fastafile.replace("fsa", "pim"), 'r')
 
@@ -57,10 +57,8 @@ elif distfile and not fastafile:
 	infile = open(distfile, 'r')
 
 
-out = open("tmp.tab",'wb')
-
-#distMatrix = []
-#rowNames = []
+values = []
+names = []
 
 for line in infile.readlines():
 	# skip comment and empty lines
@@ -68,12 +66,20 @@ for line in infile.readlines():
 		continue
 	line = re.sub('^\s+', "", line)
 	line = re.sub('\s+', "\t", line)
-	
-	#rowNames.append( line.split("\t")[1] )
+	names.append( line.split("\t")[1] )
+	values.append( [int(x) if x else 0 for x in line.split("\t")[2:]] )
 	#distMatrix.append( [ int(x) if x else 0 for x in line.split("\t")[2:]] )
-	out.write(line + "\n")
 	#line = re.sub('', "0", line)
 	#line = re.sub('\t\t', "\t0\t", line)
+
+#print names
+
+out = open(distfile.replace("pim", "tab"),'wb')
+
+for x in range(0,len(names),1):
+	for y in range(0,len(names),1):
+		line = str(names[x]) + ";" + str(names[y]) + ";" + str(values[x][y]) 
+		out.write(line + "\n")
 out.close()		
 
 #np_distMatrix = np.array(distMatrix)

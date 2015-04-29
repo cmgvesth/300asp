@@ -1,9 +1,6 @@
 #########################################################
 ### A) Installing and loading required packages
 #########################################################
-library(ggplot2)
-library(plyr)  
-
 if (!require("gplots")) {
    install.packages("gplots", dependencies = TRUE)
    library(gplots)
@@ -21,7 +18,14 @@ if (!require("pheatmap")) {
    install.packages("pheatmap", dependencies = TRUE)
    library(pheatmap)
    }
-
+if (!require("ggplot2")) {
+   install.packages("ggplot2", dependencies = TRUE)
+   library(ggplot2)
+   }
+if (!require("plyr")) {
+   install.packages("plyr", dependencies = TRUE)
+   library(plyr)
+   }   
 
 # Read data from file
 infile = replace_infile
@@ -54,7 +58,11 @@ colnames(mat) <- dat$q_clustid
 cvs <- unique(dat$q_orgid)
 cvs_color <- rainbow(length(cvs))
 ccol_stages <- sapply(dat$q_orgid, function(x) cvs_color[x==cvs])
-plotwidth <- length(cvs)+12
+
+plotwidth <- 12
+if (length(cvs) <= 10) {
+	plotwidth <- length(cvs)+12
+}
 plotheight <- 10
 
 b <- c(0,0.2,0.4,0.6,0.8,1)

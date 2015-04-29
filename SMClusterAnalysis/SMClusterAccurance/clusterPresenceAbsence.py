@@ -8,7 +8,6 @@ root = os.path.abspath(__file__).split("github")[0]
 sys.path.append(root+"github/utils/")
 from aspmine_imports import *
 
-
 '''------------------------------------------------------------------
 # Code uses local functions: 
 ------------------------------------------------------------------
@@ -27,7 +26,7 @@ parser = CustomArgumentParser(formatter_class=SmartFormatter, usage='%(prog)s -d
 parser.add_argument("-dbname", "-d", required=False, default = "aspminedb", help="Database name")
 parser.add_argument("-Rscript", "-R", required=False, default = "/home/tcve/github/tcve/blast_antismash_subset.R", help="Rscript name/path")
 parser.add_argument("-specificOrgs", "-sp", nargs = '*',  required=False, default=[None], action='store', help="List of specificOrgs for plots")
-parser.add_argument("-section", "-sec", required=False, default = "Nigri", help="Aspergillus section")
+parser.add_argument("-section", "-sec", required=False, default = "*", help="Aspergillus section")
 parser.add_argument("-afolder", "-af",  required=False, default="afolder_clusterPresenceAbsence", help="Name of folder for analysis results")
 
 """ TABLES """
@@ -68,6 +67,12 @@ if clean2:
 if clean3:
 	loop=True
 
+root = os.path.abspath(__file__).split("/")[1:-1]
+Rpath = "/" + "/".join(root) + "/"
+afolder = os.getcwd() + "/" + args.afolder
+os.system("mkdir -p " + afolder + "" )
+afolderString = afolder.replace("/", "\\/")
+	
 '''------------------------------------------------------------------
 # Print argument values to screen
 ------------------------------------------------------------------'''
@@ -85,7 +90,7 @@ print "#--------------------------------------------------------------\n\
 # Analysis, cluster VS organism - with best candidate, looping\t\t: %s\n\
 #--------------------------------------------------------------" % (args.dbname, Rscript, specificOrgs, clean1, clean2, clean3, csize, a1, a2, a3)
 
-if specificOrgs and (not a3 or not a1):
+if specificOrgs != [None] and (not a3 or not a1):
 	print "# WARNING: specificOrgs is only applicable to analysis 3 and 1, -a3/-a1"
 
 
@@ -156,7 +161,8 @@ if clean2:
 	print "# INFO: Dropping and re-creating t_antismash2blast"
 
 	cursor.execute("DROP TABLE IF EXISTS t_antismash2blast")
-	query = "CREATE TABLE t_antismash2blast as select * from t_antismash2organism join blast on (sm_protein_id = q_seqkey and q_org = name) where h_cov+q_cov >= 180;"
+	query = "CREATE TABLE t_antismash2blast as select * from t_antismash2organism join blast on \
+	(sm_protein_id = q_seqkey and q_org = name) where h_cov+q_cov >= 160 and LEAST(h_cov, q_cov) >= 70;"
 
 	executeQuery(cursor, query)
 
@@ -179,7 +185,7 @@ if clean3:
 		select * from (\
 		select ta.* from t_antismash2blast as ta\
 		join ( select q_seqid, h_seqid, h_org, max(pident) as max from t_antismash2blast group by q_seqid, h_org) as tb \
-		on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and  pident=max) as tc group by q_seqid, h_org;"
+		on ta.q_seqid=tb.q_seqid and ta.h_org=tb.h_org and  pident=tb.max) as tc group by q_seqid, h_org;"
 	executeQuery(cursor, query)
 
 	print "# INFO Runtime t_antismash2blast_reduced: ", (datetime.now()-startTimet_antismash2blast_reduced)
@@ -266,12 +272,6 @@ if loop:
 ----------------------------------------------------------------------------"""
 def main():
 
-	root = os.path.abspath(__file__).split("/")[1:-1]
-	Rpath = "/" + "/".join(root) + "/"
-	afolder = os.getcwd() + "/" + args.afolder
-	os.system("mkdir -p " + afolder + "" )
-	afolderString = afolder.replace("/", "\\/")
-	
 	print "# INFO: creating analysis folder:" + afolder
 
 	os.system("sed \"s/replace_folderpath/\'" + afolderString + "\'/g\" " + Rpath + "/clusterPresenceAbsence_generic.R > " + afolder + "/tmp.R")
@@ -286,11 +286,12 @@ def main():
 		( data1, data2, data3, file_string  ) = analysis3( afolder, afolderString )
 		os.system("sed -i \"s/replace_analysisNumber/\'a3\'/g\" " + afolder + "/tmp.R")
 
-	os.system("sed -i \"s/replace_data1/" + data1 + "/g\" " + afolder + "/tmp.R")
-	os.system("sed -i \"s/replace_data2/" + data2 + "/g\" " + afolder + "/tmp.R")
-	os.system("sed -i \"s/replace_data3/" + data3 + "/g\" " + afolder + "/tmp.R")
-	os.system("sed -i \"s/replace_infile/\'" + file_string + "\'/g\" " + afolder + "/tmp.R")
-	os.system("R CMD BATCH " + afolder + "/tmp.R " + afolder + "/test.out ")
+	if a1 or a2 or a3:
+		os.system("sed -i \"s/replace_data1/" + data1 + "/g\" " + afolder + "/tmp.R")
+		os.system("sed -i \"s/replace_data2/" + data2 + "/g\" " + afolder + "/tmp.R")
+		os.system("sed -i \"s/replace_data3/" + data3 + "/g\" " + afolder + "/tmp.R")
+		os.system("sed -i \"s/replace_infile/\'" + file_string + "\'/g\" " + afolder + "/tmp.R")
+		os.system("R CMD BATCH " + afolder + "/tmp.R " + afolder + "/test.out ")
 
 """--------------------------------------
 t_antismashLoopAntismash - best candicate cluster analysis
@@ -314,7 +315,8 @@ def analysis3( afolder, afolderString ):
 
 	if specificOrgs == [None]:
 		print "# INFO: creating section argument"
-		secString = "tmpdat\$q_sec==\'" + section + "\' \& tmpdat\$h_sec==\'" + section + "\'"
+		secString = "grepl(\'" + section + "\', tmpdat\$q_sec) \& grepl(\'" + section + "\', tmpdat\$h_sec)"
+		#secString = "tmpdat\$q_sec==\'" + section + "\' \& tmpdat\$h_sec==\'" + section + "\'"
 		data1 = "data1 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
 		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
 		data3 = "data3 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "
@@ -364,7 +366,8 @@ def analysis1( afolder, afolderString ):
 
 	if specificOrgs == [None]:
 		print "# INFO: creating section argument"
-		secString = "tmpdat\$q_sec==\'" + section + "\' \& tmpdat\$h_sec==\'" + section + "\'"
+		secString = "grepl(\'" + section + "\', tmpdat\$sec1) \& grepl(\'" + section + "\', tmpdat\$sec2)"
+		#secString = "tmpdat\$sec1==\'" + section + "\' \& tmpdat\$sec2==\'" + section + "\'"
 		data1 = "data1 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov))"
 		data2 = "data2 <- subset(tmpdat, tmpdat\$clust_size>10 \& (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov)) "
 		data3 = "data3 <- subset(tmpdat, (" + secString + "), select=c(q_orgid,q_clustid,h_realname,clustCov,q_orgname)) "

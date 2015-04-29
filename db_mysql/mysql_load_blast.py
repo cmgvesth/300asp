@@ -129,40 +129,43 @@ except mdb.Error, e:
 if not cursor.execute("SHOW TABLES LIKE 'blast';"):
 	print "# Creating table blast"
 
-	cursor.execute("CREATE TABLE `blast` (\
-	`q_org` varchar(100) NOT NULL,\
-	`q_seqkey` varchar(100) NOT NULL,\
-	`q_tail` varchar(100) NOT NULL,\
-	`h_org` varchar(100) NOT NULL,\
-	`h_seqkey` varchar(100) NOT NULL,\
-	`h_tail` varchar(100) NOT NULL,\
-	`pident` decimal(10,2) DEFAULT NULL,\
-	`q_len` int(11) NOT NULL,\
-	`q_start` int(11) NOT NULL,\
-	`q_end` int(11) NOT NULL,\
-	`h_len` int(11) NOT NULL,\
-	`h_start` int(11) NOT NULL,\
-	`h_end` int(11) NOT NULL,\
-	`bitscore` int(11) NOT NULL,\
-	`evalue` varchar(10) NOT NULL,\
-	`h_seqid` varchar(100) NOT NULL,\
-	`q_seqid` varchar(100) NOT NULL,\
-	`filename` varchar(100) NOT NULL,\
-	`loadstamp` varchar(100) NOT NULL,\
-	`q_cov` decimal(10,2) DEFAULT NULL,\
-	`h_cov` decimal(10,2) DEFAULT NULL,\
-	PRIMARY KEY (`bitscore`,`q_org`,`q_seqkey`,`h_org`,`h_seqkey`,`q_start`,`h_start`),\
-	KEY `q_org` (`q_org`),\
-	KEY `q_seqkey` (`q_seqkey`),\
-	KEY `h_org` (`h_org`),\
-	KEY `h_seqkey` (`h_seqkey`),\
-	KEY `h_seqid` (`h_seqid`),\
-	KEY `q_seqid` (`q_seqid`),\
-	KEY `filename` (`filename`),\
-	KEY `qh_i` (`q_org`,`h_org`)\
-	) ENGINE=MyISAM DEFAULT CHARSET=latin1")
-	db.commit()
 
+	cursor.execute("CREATE TABLE blast (\
+		  q_org varchar(100) NOT NULL,\
+		  q_seqkey varchar(100) NOT NULL,\
+		  q_tail varchar(100) NOT NULL,\
+		  h_org varchar(100) NOT NULL,\
+		  h_seqkey varchar(100) NOT NULL,\
+		  h_tail varchar(100) NOT NULL,\
+		  pident decimal(10,2) DEFAULT NULL,\
+		  q_len int(11) NOT NULL,\
+		  q_start int(11) NOT NULL,\
+		  q_end int(11) NOT NULL,\
+		  h_len int(11) NOT NULL,\
+		  h_start int(11) NOT NULL,\
+		  h_end int(11) NOT NULL,\
+		  bitscore int(11) NOT NULL,\
+		  evalue varchar(10) NOT NULL,\
+		  h_seqid varchar(100) NOT NULL,\
+		  q_seqid varchar(100) NOT NULL,\
+		  filename varchar(100) NOT NULL,\
+		  loadstamp varchar(100) NOT NULL,\
+		  q_cov decimal(10,2) DEFAULT NULL,\
+		  h_cov decimal(10,2) DEFAULT NULL,\
+		  PRIMARY KEY (bitscore,q_org,q_seqkey,h_org,h_seqkey,q_start,h_start),\
+		  KEY q_org (q_org),\
+		  KEY q_seqkey (q_seqkey),\
+		  KEY h_org (h_org),\
+		  KEY h_seqkey (h_seqkey),\
+		  KEY h_seqid (h_seqid),\
+		  KEY q_seqid (q_seqid),\
+		  KEY filename (filename),\
+		  KEY qh_i (q_org,h_org),\
+		  KEY ioo (h_org,q_org),\
+		  KEY iooss (h_org,q_org,h_seqkey,q_seqkey)\
+		) ENGINE=MyISAM DEFAULT CHARSET=latin1")
+	db.commit()
+	
 #------------------------------------------------------------------
 # Get lines from file
 
