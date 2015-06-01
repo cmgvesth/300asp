@@ -1,0 +1,169 @@
+
+R version 3.1.1 (2014-07-10) -- "Sock it to Me"
+Copyright (C) 2014 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> library(shiny)
+> library(ggplot2)
+> library(reshape)
+> library(gplots)
+KernSmooth 2.23 loaded
+Copyright M. P. Wand 1997-2009
+
+Attaching package: ‘gplots’
+
+The following object is masked from ‘package:stats’:
+
+    lowess
+
+> library(RColorBrewer)
+> library(argparse)
+Loading required package: proto
+> library(ape)
+> library(RMySQL)
+Loading required package: DBI
+> library(dendextend)
+
+Welcome to dendextend version 0.18.3
+
+Type ?dendextend to access the overall documentation and
+vignette('dendextend') for the package vignette.
+You can execute a demo of the package via: demo(dendextend)
+
+More information is available on the dendextend project web-site:
+https://github.com/talgalili/dendextend/
+
+Contact: <tal.galili@gmail.com>
+Suggestions and bug-reports can be submitted at: https://github.com/talgalili/dendextend/issues
+
+			To suppress the this message use:
+			suppressPackageStartupMessages(library(dendextend))
+
+
+Attaching package: ‘dendextend’
+
+The following objects are masked from ‘package:ape’:
+
+    ladderize, rotate
+
+The following object is masked from ‘package:stats’:
+
+    cutree
+
+> library(gridExtra)
+Loading required package: grid
+> 
+> 
+> con <- dbConnect(MySQL(), user="setd", password="1234", dbname="aspminedb", host="192.38.13.196", port = 3306)
+> 
+> query <- "select ta.* from t_genecluster_testing as ta join t_gcc_testing using(q_clust)";
+> 
+> #query <- "select *,  pident*members/q_size as custom_score from (select *, count(*) as members from t_genecluster_bidir_hits where pident > 50 group by q_clust,clust_id) tx where members >= 0.5*q_size and members >= 0.5*h_size and q_size > 1;"
+> 
+> gcc <- dbGetQuery(con, query)
+Warning messages:
+1: In .local(conn, statement, ...) :
+  Decimal MySQL column 9 imported as numeric
+2: In .local(conn, statement, ...) :
+  Decimal MySQL column 11 imported as numeric
+> 
+> data_wide <- cast(gcc, q_clust ~ clust_id,value = 'custom_score')
+> 
+> 
+> data_wide[is.na(data_wide)] <-0
+> 
+> 
+> wssplot <- function(data_wide, nc=100, seed=1234){
++                wss <- (nrow(data_wide)-1)*sum(apply(data_wide,2,var))
++                for (i in 2:nc){
++                     set.seed(seed)
++                     wss[i] <- sum(kmeans(data_wide, centers=i)$withinss)}
++                 plot(1:nc, wss, type="b", xlab="Number of Clusters",
++                      ylab="Within groups sum of squares")}
+> 
+> pdf("testing.pdf")
+> wssplot(data_wide)
+> 
+> mat <- data.matrix(data_wide)
+Warning message:
+In data.matrix(data_wide) : NAs introduced by coercion
+> rownames(mat) <- data_wide[,1]
+> mat <- mat[,-1]
+> mat[is.na(mat)] <- 0
+> 
+> 
+>     colfunc <- brewer.pal(9,"Blues")
+> 
+>  hv <-  heatmap.2(mat,
++         main = "gcc",
++         dendrogram = 'both',
++         margins=c(6,12),
++         na.color = 'white',
++         col = colfunc,
++         key = TRUE,
++         #cexRow = 0.8, # Adjusts row fontsize later like in old script
++         trace='none')
+>  
+> 
+> 
+> mytree <- hv$rowDendrogram
+> groups <- as.data.frame(dendextend::cutree(mytree,k=60))
+> colnames(groups) <- "group"
+> print(head(groups))
+             group
+10_404171_8      1
+10_440258_13     2
+10_480073_5      3
+10_80929_5       4
+11_114282_5      3
+1_131604_9       5
+> 
+> groups$clust <- rownames(groups)
+> # rownames(groups)<-c(1:length(rownames(groups)))
+> rownames(groups)<- NULL
+> print(head(groups))
+  group        clust
+1     1  10_404171_8
+2     2 10_440258_13
+3     3  10_480073_5
+4     4   10_80929_5
+5     3  11_114282_5
+6     5   1_131604_9
+> groups <- groups[order(groups$group),]
+> print(head(groups))
+    group        clust
+1       1  10_404171_8
+35      1  11_449894_8
+40      1   1_183721_8
+132     1  20_417754_9
+166     1 22_1116441_8
+208     1  23_165631_6
+> write.csv(groups,file = "gene_cluster_clustering.csv")
+> dev.off()
+null device 
+          1 
+> pdf("testing2.pdf")
+> grid.table(groups,gpar.coretext = gpar(fontsize=6), gpar.coltext = gpar(fontsize=6), padding.h=unit(2, "mm"), padding.v=unit(2, "mm"))
+> dev.off()
+null device 
+          1 
+> 
+> proc.time()
+   user  system elapsed 
+ 48.849   0.111  48.967 
