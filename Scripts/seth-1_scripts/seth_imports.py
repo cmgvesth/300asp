@@ -41,7 +41,7 @@ def single_seq_builder(gene_cluster, save = False):
 	else:
 		print"Creating SeqRecord object for %s" % gc_id
 		print"Files are only created if you set single_seq_builder(gene_cluster, save = True)"
-		cursor = asp_con('192.38.13.196', 'setd', '1234')
+		cursor = asp_con('')
 
 		
 			# Fetching length of whole cluster
